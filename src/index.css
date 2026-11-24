@@ -6,6 +6,113 @@
     --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+    --font-serif: "Newsreader", Georgia, serif;
+    --ui-accent: #0284c7;
+    --ui-accent-hover: #0369a1;
+    --ui-accent-soft: #e0f2fe;
+    --ui-accent-text: #0369a1;
+    --ui-bg: #f8fafc;
+    --ui-surface: #ffffff;
+    --ui-border: #e2e8f0;
+    --ui-radius: 0.75rem;
+  }
+
+  /* 1. Swiss Técnico (Default clean crisp engineering aesthetic) */
+  html[data-interface="swiss"] {
+    --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+    --ui-accent: #0284c7;
+    --ui-accent-hover: #0369a1;
+    --ui-accent-soft: #e0f2fe;
+    --ui-accent-text: #0369a1;
+    --ui-radius: 0.75rem;
+  }
+
+  /* 2. Ejecutivo Ámbar (Warm stone paper + executive gold-amber + serif titles) */
+  html[data-interface="ejecutivo"] {
+    --font-display: "Newsreader", Georgia, serif;
+    --ui-accent: #b45309;
+    --ui-accent-hover: #92400e;
+    --ui-accent-soft: #fef3c7;
+    --ui-accent-text: #92400e;
+    --ui-bg: #faf7f2;
+    --ui-surface: #fffdf9;
+    --ui-border: #e7dfd1;
+    --ui-radius: 0.625rem;
+  }
+  html[data-interface="ejecutivo"].dark {
+    --ui-accent: #d97706;
+    --ui-accent-hover: #b45309;
+    --ui-accent-soft: rgba(180, 83, 9, 0.2);
+    --ui-accent-text: #fbbf24;
+    --ui-bg: #12100e;
+    --ui-surface: #1b1815;
+    --ui-border: #2f2922;
+  }
+
+  /* 3. Terminal Matrix (Sharp technical console + emerald + monospace display headings) */
+  html[data-interface="terminal"] {
+    --font-display: "JetBrains Mono", ui-monospace, monospace;
+    --ui-accent: #059669;
+    --ui-accent-hover: #047857;
+    --ui-accent-soft: #d1fae5;
+    --ui-accent-text: #047857;
+    --ui-bg: #f1f5f3;
+    --ui-surface: #ffffff;
+    --ui-border: #cbd5d0;
+    --ui-radius: 0.375rem;
+  }
+  html[data-interface="terminal"].dark {
+    --ui-accent: #10b981;
+    --ui-accent-hover: #059669;
+    --ui-accent-soft: rgba(16, 185, 129, 0.16);
+    --ui-accent-text: #34d399;
+    --ui-bg: #070d0a;
+    --ui-surface: #0d1612;
+    --ui-border: #1e3127;
+  }
+
+  /* 4. Editorial Estudio (High-contrast ink & paper + indigo accent + wide editorial serif) */
+  html[data-interface="editorial"] {
+    --font-display: "Newsreader", Georgia, serif;
+    --ui-accent: #4f46e5;
+    --ui-accent-hover: #4338ca;
+    --ui-accent-soft: #e0e7ff;
+    --ui-accent-text: #4338ca;
+    --ui-bg: #f6f6f4;
+    --ui-surface: #ffffff;
+    --ui-border: #d6d3d1;
+    --ui-radius: 0.5rem;
+  }
+  html[data-interface="editorial"].dark {
+    --ui-accent: #6366f1;
+    --ui-accent-hover: #4f46e5;
+    --ui-accent-soft: rgba(99, 102, 241, 0.2);
+    --ui-accent-text: #a5b4fc;
+    --ui-bg: #0d0d12;
+    --ui-surface: #15151e;
+    --ui-border: #27273a;
+  }
+
+  /* 5. Zen Enfocado (Low visual noise sage-teal + soft rounded cards) */
+  html[data-interface="zen"] {
+    --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+    --ui-accent: #0d9488;
+    --ui-accent-hover: #0f766e;
+    --ui-accent-soft: #ccfbf1;
+    --ui-accent-text: #0f766e;
+    --ui-bg: #f4f7f6;
+    --ui-surface: #fbfdfc;
+    --ui-border: #d7e3e0;
+    --ui-radius: 1rem;
+  }
+  html[data-interface="zen"].dark {
+    --ui-accent: #14b8a6;
+    --ui-accent-hover: #0d9488;
+    --ui-accent-soft: rgba(20, 184, 166, 0.18);
+    --ui-accent-text: #5eead4;
+    --ui-bg: #0b1313;
+    --ui-surface: #111c1c;
+    --ui-border: #213434;
   }
 
   body {
@@ -19,6 +126,70 @@
   code, pre, kbd, .font-mono {
     font-family: var(--font-mono);
   }
+}
+
+/* Harmonized interface variant overrides across non-default modes */
+html[data-interface]:not([data-interface="swiss"]) .horizonte-shell {
+  background-color: var(--ui-bg);
+}
+
+html[data-interface]:not([data-interface="swiss"]) .horizonte-sidebar,
+html[data-interface]:not([data-interface="swiss"]) .horizonte-header,
+html[data-interface]:not([data-interface="swiss"]) .horizonte-nav-mobile {
+  background-color: var(--ui-surface);
+  border-color: var(--ui-border);
+}
+
+html[data-interface]:not([data-interface="swiss"]) main section,
+html[data-interface]:not([data-interface="swiss"]) main article {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+html[data-interface="ejecutivo"] main .bg-sky-600,
+html[data-interface="terminal"] main .bg-sky-600,
+html[data-interface="editorial"] main .bg-sky-600,
+html[data-interface="zen"] main .bg-sky-600,
+html[data-interface="ejecutivo"] header .bg-sky-600,
+html[data-interface="terminal"] header .bg-sky-600,
+html[data-interface="editorial"] header .bg-sky-600,
+html[data-interface="zen"] header .bg-sky-600 {
+  background-color: var(--ui-accent);
+}
+
+html[data-interface="ejecutivo"] main .bg-sky-600:hover,
+html[data-interface="terminal"] main .bg-sky-600:hover,
+html[data-interface="editorial"] main .bg-sky-600:hover,
+html[data-interface="zen"] main .bg-sky-600:hover,
+html[data-interface="ejecutivo"] header .bg-sky-600:hover,
+html[data-interface="terminal"] header .bg-sky-600:hover,
+html[data-interface="editorial"] header .bg-sky-600:hover,
+html[data-interface="zen"] header .bg-sky-600:hover {
+  background-color: var(--ui-accent-hover);
+}
+
+html[data-interface="ejecutivo"] .text-sky-600,
+html[data-interface="terminal"] .text-sky-600,
+html[data-interface="editorial"] .text-sky-600,
+html[data-interface="zen"] .text-sky-600,
+html[data-interface="ejecutivo"] .text-sky-700,
+html[data-interface="terminal"] .text-sky-700,
+html[data-interface="editorial"] .text-sky-700,
+html[data-interface="zen"] .text-sky-700 {
+  color: var(--ui-accent-text);
+}
+
+html[data-interface="terminal"] main h1,
+html[data-interface="terminal"] main h2,
+html[data-interface="terminal"] main h3 {
+  letter-spacing: -0.02em;
+}
+
+html[data-interface="editorial"] main h1,
+html[data-interface="editorial"] main h2,
+html[data-interface="ejecutivo"] main h1,
+html[data-interface="ejecutivo"] main h2 {
+  letter-spacing: -0.015em;
 }
 
 .tabular-nums {

@@ -19,6 +19,12 @@ import type {
   TaskItem,
 } from '../types/horizonte';
 import { PomodoroTimerCard } from '../components/PomodoroTimerCard';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import {
+  downloadTextFile,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface InicioViewProps {
   missions: Mission[];
@@ -40,6 +46,7 @@ interface InicioViewProps {
   onOpenVoice: () => void;
   onNavigate: (tab: AppTab) => void;
   onOpenNewMission: () => void;
+  onImportData: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
 }
 
 export const InicioView: React.FC<InicioViewProps> = ({
@@ -62,6 +69,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   onOpenVoice,
   onNavigate,
   onOpenNewMission,
+  onImportData,
 }) => {
   const [quickTask, setQuickTask] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -99,6 +107,40 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Resumen operativo · GEMA, Pomodoro, Misiones y Tareas
+        </div>
+        <ModuleExportImportBar
+          label="Tablero Inicial"
+          onExportJson={() =>
+            downloadTextFile(
+              exportSectionJson('inicio', {
+                gema,
+                pomodoro,
+                superAgenteModo,
+                misiones: missions,
+                tareas: tasks,
+              }),
+              'horizonte-inicio-resumen.json',
+              'application/json'
+            )
+          }
+          onExportTxt={() =>
+            downloadTextFile(
+              exportPartialTxt({
+                title: 'Resumen Inicio y GEMA',
+                misiones: missions,
+                tareas: tasks,
+              }) +
+                `\n\n=== GEMA ===\nENERGIA: ${gema.energia}%\nCARGA COGNITIVA: ${gema.cargaCognitiva}\nMODO SUPER AGENTE: ${superAgenteModo}\nPOMODORO: ${pomodoro.mode} (${pomodoro.workMinutes}m/${pomodoro.breakMinutes}m · ciclos: ${pomodoro.cyclesCompleted})\n`,
+              'horizonte_inicio_resumen.txt'
+            )
+          }
+          onImportFile={onImportData}
+        />
+      </div>
+
       {/* KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">

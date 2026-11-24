@@ -706,3 +706,148 @@ export async function addSlideWithText(
     }
   );
 }
+
+// ---------- GOOGLE CLASSROOM ----------
+
+export interface ClassroomCourse {
+  id: string;
+  name: string;
+  section?: string;
+  descriptionHeading?: string;
+  courseState?: string;
+  alternateLink?: string;
+}
+
+export interface ClassroomDate {
+  year?: number;
+  month?: number;
+  day?: number;
+}
+
+export interface ClassroomCourseWork {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  state?: string;
+  alternateLink?: string;
+  topicId?: string;
+  maxPoints?: number;
+  dueDate?: ClassroomDate;
+  workType?: string;
+  updateTime?: string;
+}
+
+export interface ClassroomMaterialItem {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  alternateLink?: string;
+  topicId?: string;
+  updateTime?: string;
+}
+
+export interface ClassroomTopic {
+  topicId: string;
+  courseId: string;
+  name: string;
+  updateTime?: string;
+}
+
+export interface ClassroomAnnouncement {
+  id: string;
+  courseId: string;
+  text: string;
+  state?: string;
+  alternateLink?: string;
+  updateTime?: string;
+}
+
+export async function listClassroomCourses(
+  accessToken: string | null
+): Promise<ClassroomCourse[]> {
+  const params = new URLSearchParams({ pageSize: '30' });
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses?${params.toString()}`,
+    accessToken
+  );
+  const data = (await res.json()) as { courses?: ClassroomCourse[] };
+  return data.courses || [];
+}
+
+export async function listClassroomCourseWork(
+  accessToken: string | null,
+  courseId: string
+): Promise<ClassroomCourseWork[]> {
+  const params = new URLSearchParams({ pageSize: '30' });
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/courseWork?${params.toString()}`,
+    accessToken
+  );
+  const data = (await res.json()) as { courseWork?: ClassroomCourseWork[] };
+  return data.courseWork || [];
+}
+
+export async function listClassroomMaterials(
+  accessToken: string | null,
+  courseId: string
+): Promise<ClassroomMaterialItem[]> {
+  const params = new URLSearchParams({ pageSize: '30' });
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/courseWorkMaterials?${params.toString()}`,
+    accessToken
+  );
+  const data = (await res.json()) as {
+    courseWorkMaterial?: ClassroomMaterialItem[];
+  };
+  return data.courseWorkMaterial || [];
+}
+
+export async function listClassroomTopics(
+  accessToken: string | null,
+  courseId: string
+): Promise<ClassroomTopic[]> {
+  const params = new URLSearchParams({ pageSize: '50' });
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/topics?${params.toString()}`,
+    accessToken
+  );
+  const data = (await res.json()) as { topic?: ClassroomTopic[] };
+  return data.topic || [];
+}
+
+export async function listClassroomAnnouncements(
+  accessToken: string | null,
+  courseId: string
+): Promise<ClassroomAnnouncement[]> {
+  const params = new URLSearchParams({ pageSize: '30' });
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/announcements?${params.toString()}`,
+    accessToken
+  );
+  const data = (await res.json()) as {
+    announcements?: ClassroomAnnouncement[];
+  };
+  return data.announcements || [];
+}
+
+export async function createClassroomAnnouncement(
+  accessToken: string | null,
+  courseId: string,
+  text: string
+): Promise<ClassroomAnnouncement> {
+  const res = await workspaceFetch(
+    `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/announcements`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text.trim(),
+        state: 'PUBLISHED',
+      }),
+    }
+  );
+  return (await res.json()) as ClassroomAnnouncement;
+}

@@ -2,7 +2,235 @@ import type {
   AIProviderKey,
   AladinStep,
   HorizonteState,
+  InterfaceVariant,
 } from '../types/horizonte';
+
+export interface InterfaceVariantMeta {
+  id: InterfaceVariant;
+  nombre: string;
+  subtitulo: string;
+  descripcion: string;
+  accentHex: string;
+  surfaceHex: string;
+  badge: string;
+}
+
+export const INTERFACE_VARIANTS: InterfaceVariantMeta[] = [
+  {
+    id: 'swiss',
+    nombre: 'Swiss Técnico',
+    subtitulo: 'Azul cielo · Geometría precisa',
+    descripcion: 'Diseño funcional limpio de alta legibilidad, ideal para trabajo diario.',
+    accentHex: '#0284c7',
+    surfaceHex: '#ffffff',
+    badge: 'Estándar',
+  },
+  {
+    id: 'ejecutivo',
+    nombre: 'Ejecutivo Ámbar',
+    subtitulo: 'Tonos piedra · Títulos serif',
+    descripcion: 'Estética cálida de cuaderno directivo con jerarquía editorial y foco estratégico.',
+    accentHex: '#b45309',
+    surfaceHex: '#fffdf9',
+    badge: 'Directivo',
+  },
+  {
+    id: 'terminal',
+    nombre: 'Terminal Matrix',
+    subtitulo: 'Esmeralda · Encabezados mono',
+    descripcion: 'Modo consola de ingeniería con bordes compactos y estética técnica.',
+    accentHex: '#059669',
+    surfaceHex: '#f1f5f3',
+    badge: 'Dev / CLI',
+  },
+  {
+    id: 'editorial',
+    nombre: 'Editorial Estudio',
+    subtitulo: 'Índigo tinta · Contraste estudio',
+    descripcion: 'Tipografía serif de alto contraste pensada para lectura, análisis y prompts largos.',
+    accentHex: '#4f46e5',
+    surfaceHex: '#f6f6f4',
+    badge: 'Lectura',
+  },
+  {
+    id: 'zen',
+    nombre: 'Zen Enfocado',
+    subtitulo: 'Salvia y teal · Cero ruido visual',
+    descripcion: 'Superficie suave con bordes amplios para reducir fatiga visual y carga GEMA.',
+    accentHex: '#0d9488',
+    surfaceHex: '#f4f7f6',
+    badge: 'Calma',
+  },
+];
+
+export const BIBLIOTECA_CATEGORIES = [
+  'Estrategia',
+  'Productividad',
+  'Investigación',
+  'Verificación y QA',
+  'Programación',
+  'Redacción',
+  'Estudios y Classroom',
+  'Sistema',
+] as const;
+
+export interface SuggestedBibliotecaItem {
+  id: string;
+  titulo: string;
+  categoria: string;
+  ia: AIProviderKey;
+  contenido: string;
+}
+
+export const PROMPT_SUGGESTIONS: SuggestedBibliotecaItem[] = [
+  {
+    id: 'sug-pr-est-1',
+    titulo: 'Análisis Pre-Mortem de Proyecto',
+    categoria: 'Estrategia',
+    ia: 'claude',
+    contenido: `ROL: Actúa como director de estrategia y gestión de riesgos.
+OBJETIVO: Realiza un análisis Pre-Mortem realista del proyecto [NOMBRE DEL PROYECTO] asumiendo que ha fracasado en 6 meses.
+CONTEXTO:
+- Objetivo: [OBJETIVO]
+- Restricciones: [PRESUPUESTO / PLAZO]
+FORMATO DE SALIDA:
+1. Top 5 causas probables de fallo ordenadas por impacto.
+2. Señal temprana de alerta para cada causa.
+3. Plan de mitigación concreto (coste cero o bajo).`,
+  },
+  {
+    id: 'sug-pr-prod-1',
+    titulo: 'Planificador 80/20 de Bloque Diario',
+    categoria: 'Productividad',
+    ia: 'chatgpt',
+    contenido: `ROL: Actúa como asistente ejecutivo orientado a carga cognitiva GEMA.
+OBJETIVO: Convierte mi lista desordenada de tareas [LISTA DE TAREAS] en un plan realista para [HORAS DISPONIBLES] horas con energía [ALTA / MEDIA / BAJA].
+REGLAS:
+- Máximo 1 prioridad crítica y 2 secundarias.
+- Indica qué tareas posponer o delegar sin culpa.
+FORMATO: Tabla breve con Bloque / Tarea / Duración / Criterio de cierre.`,
+  },
+  {
+    id: 'sug-pr-inv-1',
+    titulo: 'Síntesis Comparativa con Fuentes',
+    categoria: 'Investigación',
+    ia: 'perplexity',
+    contenido: `ROL: Investigador riguroso que solo cita fuentes verificables.
+OBJETIVO: Compara [OPCIONES A COMPARAR] respecto a [CRITERIOS: precio, fiabilidad, privacidad, curva de uso].
+REGLAS:
+- Cita URL completa de cada afirmación clave.
+- Marca como NO VERIFICADO cualquier dato sin fuente primaria reciente.
+FORMATO: Tabla comparativa + Veredicto + Riesgos ocultos.`,
+  },
+  {
+    id: 'sug-pr-qa-1',
+    titulo: 'Auditor Crítico Anti-Alucinaciones',
+    categoria: 'Verificación y QA',
+    ia: 'claude',
+    contenido: `ROL: Auditor independiente de veracidad y consistencia lógica.
+TAREA: Revisa el texto o resultado adjunto [PEGAR BORRADOR] y señala:
+1. Afirmaciones sin evidencia o sospechosas.
+2. Contradicciones internas o huecos lógicos.
+3. Qué 3 comprobaciones manuales debo hacer antes de aprobarlo.
+REGLA: No reescribas el texto con datos nuevos; clasifica cada punto como VERIFICADO, DUDOSO o INVENTADO.`,
+  },
+  {
+    id: 'sug-pr-code-1',
+    titulo: 'Revisión Quirúrgica de Código y Seguridad',
+    categoria: 'Programación',
+    ia: 'deepseek',
+    contenido: `ROL: Ingeniero sénior de software y seguridad.
+OBJETIVO: Revisa este fragmento [PEGAR CÓDIGO] buscando bugs reales, condiciones de carrera, fugas de secretos o fallos de tipos.
+REGLAS:
+- No propongas reescrituras innecesarias del estilo.
+- Prioriza por severidad (Crítico / Medio / Mejora).
+FORMATO: Problema exacto -> Por qué falla -> Parche mínimo sugerido.`,
+  },
+  {
+    id: 'sug-pr-red-1',
+    titulo: 'Comunicación Clara en 3 Capas',
+    categoria: 'Redacción',
+    ia: 'chatgpt',
+    contenido: `ROL: Editor profesional de comunicación ejecutiva y académica.
+OBJETIVO: Reescribe este borrador [BORRADOR] para [DESTINATARIO] con tono [CERCANO / FORMAL / DIRECTO].
+RESTRICCIONES: Elimina muletillas, mantén los datos exactos del original y no inventes compromisos nuevos.
+FORMATO: 1) Asunto/Titular, 2) Mensaje listo para enviar, 3) Resumen de 1 línea.`,
+  },
+  {
+    id: 'sug-pr-cls-1',
+    titulo: 'Rúbrica y Plan de Entrega Classroom',
+    categoria: 'Estudios y Classroom',
+    ia: 'gemini',
+    contenido: `ROL: Tutor académico metódico.
+OBJETIVO: Desglosa la tarea de Google Classroom [ENUNCIADO DE LA TAREA] con fecha límite [FECHA] en hitos ejecutables.
+FORMATO DE SALIDA:
+1. Requisitos obligatorios de evaluación detectados en el enunciado.
+2. Checklist de pasos (25 min por bloque Pomodoro).
+3. Posibles errores típicos que restan nota y cómo evitarlos.`,
+  },
+  {
+    id: 'sug-pr-sys-1',
+    titulo: 'Extractor de Memoria Permanente TXT-1',
+    categoria: 'Sistema',
+    ia: 'general',
+    contenido: `ROL: Gestor de memoria de Horizonte OS.
+TAREA: A partir de la conversación o notas [PEGAR NOTAS], extrae exclusivamente hechos confirmados, decisiones tomadas y preferencias estables.
+REGLAS:
+- Máximo 12 líneas.
+- No incluyas suposiciones ni datos sensibles.
+FORMATO: Listo para copiar en bloques === MEMORIA === de Horizonte OS.`,
+  },
+];
+
+export const SKILL_SUGGESTIONS: SuggestedBibliotecaItem[] = [
+  {
+    id: 'sug-sk-qa-1',
+    titulo: 'Modo Verificación Estricta (Cero Invención)',
+    categoria: 'Verificación y QA',
+    ia: 'general',
+    contenido: `REGLA DE VERIFICACIÓN ESTRICTA:
+- Distingue siempre entre [VERIFICADO], [HIPÓTESIS] y [PENDIENTE].
+- Si no tienes acceso real a una fuente, archivo o herramienta, escribe exactamente "NO COMPROBADO" y explica cómo verificarlo en 1 paso.
+- Prohibido rellenar lagunas con estimaciones plausibles presentadas como hechos.`,
+  },
+  {
+    id: 'sug-sk-prod-1',
+    titulo: 'Filtro Cognitivo GEMA (Respuesta Breve)',
+    categoria: 'Productividad',
+    ia: 'general',
+    contenido: `MODO BAJA FRICCIÓN (GEMA):
+- Entrega primero la respuesta útil o acción concreta en máximo 5 viñetas.
+- Evita introducciones largas, disculpas o teoría no pedida.
+- Cierra siempre con una única "Próxima acción (2 minutos)".`,
+  },
+  {
+    id: 'sug-sk-cls-1',
+    titulo: 'Tutor Socrático para Estudios y Classroom',
+    categoria: 'Estudios y Classroom',
+    ia: 'gemini',
+    contenido: `SKILL TUTOR SOCRÁTICO:
+- No entregues la respuesta final de ejercicios evaluables sin guiar antes al estudiante.
+- Explica el concepto base con un ejemplo sencillo, haz 1 pregunta de comprobación y espera respuesta antes de avanzar.`,
+  },
+  {
+    id: 'sug-sk-code-1',
+    titulo: 'Protocolo Parche Mínimo y Seguro',
+    categoria: 'Programación',
+    ia: 'claude',
+    contenido: `SKILL INGENIERÍA SEGURA:
+- Preserva la arquitectura existente antes de proponer refactors.
+- Valida entradas externas, evita secretos en cliente y verifica casos límite (nulos, listas vacías, errores de red).`,
+  },
+  {
+    id: 'sug-sk-est-1',
+    titulo: 'Criterio Soberano y Coste Cero',
+    categoria: 'Estrategia',
+    ia: 'general',
+    contenido: `SKILL SOBERANÍA Y COSTE CERO:
+- Prioriza siempre herramientas locales, abiertas, reversibles y gratuitas.
+- Advierte explícitamente si una opción implica suscripción recurrente, bloqueo de proveedor o envío de datos sensibles.`,
+  },
+];
 
 export const AI_PROVIDERS: Record<
   AIProviderKey,
@@ -115,6 +343,7 @@ export const SEED_STATE: HorizonteState = {
   },
   ajustes: {
     theme: 'light',
+    interfaceVariant: 'swiss',
     memoriaAutomatica: true,
     alarma: true,
     focusMode: false,
@@ -405,6 +634,7 @@ export const SEED_STATE: HorizonteState = {
       id: 'sk-activa-horizonte',
       titulo: 'ACTIVA HORIZONTE OS',
       ia: 'general',
+      categoria: 'Sistema',
       activa: true,
       contenido: `ACTIVA HORIZONTE OS.
 
@@ -425,6 +655,7 @@ Dime qué preferencias y decisiones están confirmadas en mi memoria permanente,
       id: 'sk-cierre-sesion',
       titulo: 'Cierre de sesión · Actualización de memoria',
       ia: 'general',
+      categoria: 'Sistema',
       activa: false,
       contenido: `Prepara ACTUALIZACIÓN DE MEMORIA:
 - Solo datos nuevos, confirmados y reutilizables.
@@ -437,6 +668,7 @@ Dime qué preferencias y decisiones están confirmadas en mi memoria permanente,
       id: 'sk-uso-chatgpt',
       titulo: 'Plantilla de arranque para ChatGPT / Claude / Gemini',
       ia: 'general',
+      categoria: 'Productividad',
       activa: false,
       contenido: `ACTIVA HORIZONTE OS.
 
@@ -462,6 +694,7 @@ MISIÓN:
       id: 'sk-horizonte-b3',
       titulo: 'HORIZONTE OS b3 corto (instrucciones ChatGPT)',
       ia: 'chatgpt',
+      categoria: 'Estrategia',
       activa: false,
       contenido: `Actúa como HORIZONTE OS: logra resultados útiles con mínimo tiempo, coste y esfuerzo. Prioridades: resultado > fiabilidad > tiempo > simplicidad > coste.
 
@@ -479,6 +712,7 @@ Prioriza opciones gratuitas, locales y seguras. No actives pagos ni APIs factura
       id: 'sk-aladin-v02-check',
       titulo: 'Aladín v0.2 · Checklist de aceptación y clave de corrección',
       ia: 'general',
+      categoria: 'Verificación y QA',
       activa: false,
       contenido: `Regla: no pases al siguiente paso si el anterior falla. Si algo falla, se corrige el prompt y se sube de versión.
 
@@ -497,6 +731,7 @@ Criterio de decisión: el 100 % lo marcas tú, nunca la IA.`,
       id: 'sk-mem-proyecto-tpl',
       titulo: 'HORIZONTE_MEMORIA_PROYECTO.txt (plantilla)',
       ia: 'general',
+      categoria: 'Sistema',
       activa: false,
       contenido: `HORIZONTE OS — MEMORIA DE PROYECTO
 Proyecto: [nombre]
@@ -521,6 +756,7 @@ PRÓXIMA ACCIÓN
       id: 'pr-core-v3',
       titulo: 'Horizonte OS — Core Operativo v3.0',
       ia: 'general',
+      categoria: 'Sistema',
       activa: true,
       contenido: `Actúa como HORIZONTE OS: ejecuta resultados reales, verificables, útiles y reutilizables.
 
@@ -557,6 +793,7 @@ RESPUESTA:
       id: 'pr-super-agente',
       titulo: 'Súper Agente Horizonte OS (Arquitectura y Modos 1-3)',
       ia: 'general',
+      categoria: 'Sistema',
       activa: false,
       contenido: `Eres el agente maestro de Horizonte OS. Tu misión es ayudar al usuario a crear, diseñar, mejorar y coordinar agentes para Horizonte OS, siempre preservando la base funcional antes de proponer cambios visuales, modulares o funcionales.
 
@@ -577,6 +814,7 @@ Principio rector: primero preservar, después mejorar y finalmente innovar.`,
       id: 'pr-biblioteca-decision',
       titulo: 'Matriz de Decisión (horizonte-biblioteca 2)',
       ia: 'perplexity',
+      categoria: 'Estrategia',
       activa: false,
       contenido: `Devuelve una tabla con: coste total, tiempo, fiabilidad, simplicidad, reversibilidad, riesgos y veredicto.
 Después indica la opción recomendada, el motivo principal, el plan B y la siguiente acción.`,
@@ -598,6 +836,7 @@ Para personas que deben tomar decisiones con varias alternativas (compras, herra
       id: 'pr-aladin-v02-maestro',
       titulo: 'Aladín v0.2 · Prompt maestro (arbitraje LaLiga)',
       ia: 'perplexity',
+      categoria: 'Investigación',
       activa: false,
       contenido: `Eres Aladín v0.2, un único agente de investigación de arbitraje en LaLiga. Tu trabajo es documentar incidencias arbitrales de UN equipo en UNA temporada, a favor y en contra, con los mismos criterios para todos. No saques conclusiones sobre intenciones.
 
@@ -642,6 +881,7 @@ ID / TEMPORADA-JORNADA-FECHA / PARTIDO y RESULTADO FINAL / URL DE LA FICHA / ÁR
       id: 'pr-aladin-v02-trampa',
       titulo: 'Aladín v0.2 · Prueba trampa (antes del piloto)',
       ia: 'general',
+      categoria: 'Verificación y QA',
       activa: false,
       contenido: `Usa las reglas del prompt maestro "Aladín v0.2". Responde a estas 4 peticiones de una en una:
 
@@ -656,6 +896,7 @@ ID / TEMPORADA-JORNADA-FECHA / PARTIDO y RESULTADO FINAL / URL DE LA FICHA / ÁR
       id: 'pr-aladin-v02-humo',
       titulo: 'Aladín v0.2 · Prueba de humo (Atlético 2025/26, J1-2)',
       ia: 'general',
+      categoria: 'Verificación y QA',
       activa: false,
       contenido: `Usa el prompt maestro "Aladín v0.2" con estos datos.
 Equipo: Atlético de Madrid
@@ -668,6 +909,7 @@ Empieza por el PASO 0 (prueba de acceso). Después sigue los pasos 1, 2 y 3 sin 
       id: 'pr-aladin-v02-piloto',
       titulo: 'Aladín v0.2 · Piloto (1 equipo, 1 temporada, J1-10)',
       ia: 'general',
+      categoria: 'Investigación',
       activa: false,
       contenido: `Usa el prompt maestro "Aladín v0.2" con estos datos.
 Equipo: [EQUIPO]
@@ -683,6 +925,7 @@ Al terminar, dime qué fuentes te resultaron más útiles y cuáles no.`,
       id: 'pr-aladin-v02-verificador',
       titulo: 'Aladín v0.2 · Verificador (segunda pasada)',
       ia: 'claude',
+      categoria: 'Verificación y QA',
       activa: false,
       contenido: `Eres un verificador independiente. Te paso el registro de cobertura y las fichas de incidencias arbitrales de LaLiga generadas por otra IA. Tu trabajo es comprobarlas, no ampliarlas.
 
@@ -708,6 +951,7 @@ AL FINAL
       id: 'pr-aios-v2',
       titulo: 'AIOS / RUL APP SUPER IA v2.0 (Gobernanza y Arquitectura)',
       ia: 'general',
+      categoria: 'Estrategia',
       activa: false,
       contenido: `PROMPT MAESTRO UNIVERSAL — AIOS / RUL APP SUPER IA
 VERSIÓN 2.0 — SISTEMA DE EJECUCIÓN ORIENTADO A RESULTADOS
@@ -725,6 +969,7 @@ OBJETIVO FINAL: Conseguir más resultados reales con menos tiempo, menos esfuerz
       id: 'pr-encargo-claro',
       titulo: 'Convertir una idea en un encargo claro',
       ia: 'chatgpt',
+      categoria: 'Productividad',
       activa: false,
       contenido:
         'Quiero conseguir [OBJETIVO], pero mi petición todavía es imprecisa. Hazme una pregunta cada vez hasta que tengas el contexto suficiente. Después, propón un plan breve y señala qué datos siguen faltando.',
@@ -733,6 +978,7 @@ OBJETIVO FINAL: Conseguir más resultados reales con menos tiempo, menos esfuerz
       id: 'pr-ensayos',
       titulo: 'Revisar y Mejorar Ensayos Académicos',
       ia: 'claude',
+      categoria: 'Estudios y Classroom',
       activa: false,
       contenido: `Analiza, corrige y eleva la calidad de este ensayo académico optimizando gramática, coherencia, argumentación y estilo formal según el nivel educativo indicado.
 
@@ -745,6 +991,7 @@ Variables:
       id: 'pr-problemas-personales',
       titulo: 'Reflexión guiada sobre problemas personales',
       ia: 'chatgpt',
+      categoria: 'Redacción',
       activa: false,
       contenido:
         'Genera una conversación estructurada para reflexionar, ordenar ideas y analizar emociones de forma guiada, proponiendo preguntas reflexivas y un pequeño plan de seguimiento práctico (siempre como apoyo reflexivo, no sustituto de ayuda profesional).',

@@ -13,6 +13,12 @@ import {
 import { ALADIN_V02_CLAVE_CORRECCION } from '../data/seedData';
 import type { AgentItem, AladinStep, Mission, SuperAgentMode } from '../types/horizonte';
 import { Modal } from '../components/Modal';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import {
+  downloadTextFile,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface AgentesViewProps {
   agents: AgentItem[];
@@ -23,6 +29,7 @@ interface AgentesViewProps {
   onDeleteAgent: (id: string) => void;
   onToggleAladinStep: (stepId: number) => void;
   onResetAladinChecklist: () => void;
+  onImportData: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
   onNotify: (msg: string, kind?: 'ok' | 'warn' | 'info') => void;
 }
 
@@ -35,6 +42,7 @@ export const AgentesView: React.FC<AgentesViewProps> = ({
   onDeleteAgent,
   onToggleAladinStep,
   onResetAladinChecklist,
+  onImportData,
   onNotify,
 }) => {
   const [subtab, setSubtab] = useState<'directorio' | 'orquestador' | 'aladin'>('directorio');
@@ -154,26 +162,100 @@ export const AgentesView: React.FC<AgentesViewProps> = ({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            setEditAgent({
-              id: '',
-              nombre: '',
-              categoria: 'Investigación',
-              rol: '',
-              especialidades: '',
-              herramientas: 'Búsqueda',
-              coste: 'Gratuito',
-              fiabilidad: 90,
-              instrucciones: '',
-            })
-          }
-          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Nuevo agente</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ModuleExportImportBar
+            label={
+              subtab === 'directorio'
+                ? 'Agentes'
+                : subtab === 'orquestador'
+                  ? 'Flujo Orquestador'
+                  : 'Checklist Aladín v0.2'
+            }
+            onExportJson={() => {
+              if (subtab === 'directorio') {
+                downloadTextFile(
+                  exportSectionJson('agentes', { agentes: agents }),
+                  'horizonte-agentes.json',
+                  'application/json'
+                );
+                onNotify(`${agents.length} agentes exportados en JSON.`);
+              } else if (subtab === 'orquestador') {
+                const promptText = buildOrchestratedPrompt();
+                downloadTextFile(
+                  exportSectionJson('orquestador', {
+                    modo: superAgenteModo,
+                    missionId: selectedMissionId || null,
+                    agentIds: selectedAgentIds,
+                    flujo: promptText,
+                  }),
+                  'horizonte-orquestador.json',
+                  'application/json'
+                );
+                onNotify('Flujo orquestador exportado en JSON.');
+              } else {
+                downloadTextFile(
+                  exportSectionJson('aladin', { aladinChecklist }),
+                  'horizonte-aladin-v02.json',
+                  'application/json'
+                );
+                onNotify('Checklist Aladín v0.2 exportada en JSON.');
+              }
+            }}
+            onExportTxt={() => {
+              if (subtab === 'directorio') {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Agentes', agentes: agents }),
+                  'horizonte_agentes_txt1.txt'
+                );
+                onNotify(`${agents.length} agentes exportados en TXT-1.`);
+              } else if (subtab === 'orquestador') {
+                downloadTextFile(
+                  buildOrchestratedPrompt(),
+                  'horizonte_flujo_orquestado.txt'
+                );
+                onNotify('Flujo orquestador exportado en TXT.');
+              } else {
+                downloadTextFile(
+                  exportPartialTxt({
+                    title: 'Aladin v0.2',
+                    aladinChecklist,
+                  }),
+                  'horizonte_aladin_v02_txt1.txt'
+                );
+                onNotify('Checklist Aladín v0.2 exportada en TXT-1.');
+              }
+            }}
+            onImportFile={(text, fileName, mode) => {
+              if (subtab === 'orquestador' && !text.includes('=== ') && !text.trim().startsWith('{')) {
+                setSelectedMissionId('');
+                setCustomGoal(text.trim());
+                onNotify('Texto cargado como objetivo en el Orquestador.');
+                return;
+              }
+              onImportData(text, fileName, mode);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setEditAgent({
+                id: '',
+                nombre: '',
+                categoria: 'Investigación',
+                rol: '',
+                especialidades: '',
+                herramientas: 'Búsqueda',
+                coste: 'Gratuito',
+                fiabilidad: 90,
+                instrucciones: '',
+              })
+            }
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span>Nuevo agente</span>
+          </button>
+        </div>
       </div>
 
       {subtab === 'directorio' && (

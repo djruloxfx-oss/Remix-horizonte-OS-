@@ -11,13 +11,19 @@ import {
   Plus,
   Mic,
   Maximize2,
+  Palette,
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
-import { SEED_STATE, ALADIN_CHECKLIST_DEFAULT } from './data/seedData';
+import {
+  SEED_STATE,
+  ALADIN_CHECKLIST_DEFAULT,
+  INTERFACE_VARIANTS,
+} from './data/seedData';
 import type {
   AppTab,
   CliLogEntry,
   HorizonteState,
+  InterfaceVariant,
   MemoryItem,
   Mission,
   PromptItem,
@@ -231,7 +237,7 @@ export default function App() {
     notify('Sesión de Google cerrada.');
   }, [notify]);
 
-  // Sync dark class on <html>
+  // Sync dark class & interface variant on <html>
   useEffect(() => {
     const root = document.documentElement;
     if (state.ajustes.theme === 'dark') {
@@ -239,7 +245,8 @@ export default function App() {
     } else {
       root.classList.remove('dark');
     }
-  }, [state.ajustes.theme]);
+    root.dataset.interface = state.ajustes.interfaceVariant || 'swiss';
+  }, [state.ajustes.theme, state.ajustes.interfaceVariant]);
 
   // Pomodoro 1s tick (React state isolated so inputs never lose focus)
   useEffect(() => {
@@ -312,13 +319,15 @@ export default function App() {
               return {
                 ...prev,
                 ...mig,
-                misiones: mig.misiones || [],
+                misiones: mig.misiones || prev.misiones,
                 tareas: mig.tareas || prev.tareas,
-                memoria: mig.memoria || [],
-                plantillas: mig.plantillas || [],
-                skills: mig.skills || [],
-                prompts: mig.prompts || [],
+                memoria: mig.memoria || prev.memoria,
+                plantillas: mig.plantillas || prev.plantillas,
+                skills: mig.skills || prev.skills,
+                prompts: mig.prompts || prev.prompts,
                 agentes: mig.agentes || prev.agentes,
+                aladinChecklist: mig.aladinChecklist || prev.aladinChecklist,
+                gema: mig.gema ? { ...prev.gema, ...mig.gema } : prev.gema,
               };
             }
             const mergeByTitle = <T extends { titulo?: string; nombre?: string }>(
@@ -334,14 +343,24 @@ export default function App() {
               );
               return [...fresh, ...existing];
             };
+            const mergedAladin = mig.aladinChecklist
+              ? prev.aladinChecklist.map((step) => {
+                  const found = mig.aladinChecklist?.find((s) => s.id === step.id);
+                  return found ? { ...step, ...found } : step;
+                })
+              : prev.aladinChecklist;
+
             return {
               ...prev,
               misiones: mergeByTitle(prev.misiones, mig.misiones),
+              tareas: mergeByTitle(prev.tareas, mig.tareas),
               memoria: mergeByTitle(prev.memoria, mig.memoria),
               plantillas: mergeByTitle(prev.plantillas, mig.plantillas),
               skills: mergeByTitle(prev.skills, mig.skills),
               prompts: mergeByTitle(prev.prompts, mig.prompts),
               agentes: mergeByTitle(prev.agentes, mig.agentes),
+              aladinChecklist: mergedAladin,
+              gema: mig.gema ? { ...prev.gema, ...mig.gema } : prev.gema,
             };
           });
           notify(`JSON importado (${mode === 'merge' ? 'fusionado' : 'reemplazado'}).`);
@@ -349,11 +368,13 @@ export default function App() {
           const parsed = parseHorizonteTxt(rawText);
           const count =
             parsed.misiones.length +
+            parsed.tareas.length +
             parsed.memoria.length +
             parsed.plantillas.length +
             parsed.skills.length +
             parsed.prompts.length +
-            parsed.agentes.length;
+            parsed.agentes.length +
+            parsed.aladinChecklist.length;
 
           if (count === 0) {
             notify('No se detectaron bloques TXT-1 válidos en el archivo.', 'warn');
@@ -370,11 +391,15 @@ export default function App() {
                   objetivo: parsed.perfilObjetivo || prev.perfil.objetivo,
                 },
                 misiones: parsed.misiones.length ? parsed.misiones : prev.misiones,
+                tareas: parsed.tareas.length ? parsed.tareas : prev.tareas,
                 memoria: parsed.memoria.length ? parsed.memoria : prev.memoria,
                 plantillas: parsed.plantillas.length ? parsed.plantillas : prev.plantillas,
                 skills: parsed.skills.length ? parsed.skills : prev.skills,
                 prompts: parsed.prompts.length ? parsed.prompts : prev.prompts,
                 agentes: parsed.agentes.length ? parsed.agentes : prev.agentes,
+                aladinChecklist: parsed.aladinChecklist.length
+                  ? parsed.aladinChecklist
+                  : prev.aladinChecklist,
               };
             }
 
@@ -391,14 +416,24 @@ export default function App() {
               return [...fresh, ...existing];
             };
 
+            const mergedAladin =
+              parsed.aladinChecklist.length > 0
+                ? prev.aladinChecklist.map((step) => {
+                    const found = parsed.aladinChecklist.find((s) => s.id === step.id);
+                    return found ? { ...step, ...found } : step;
+                  })
+                : prev.aladinChecklist;
+
             return {
               ...prev,
               misiones: mergeByKey(prev.misiones, parsed.misiones),
+              tareas: mergeByKey(prev.tareas, parsed.tareas),
               memoria: mergeByKey(prev.memoria, parsed.memoria),
               plantillas: mergeByKey(prev.plantillas, parsed.plantillas),
               skills: mergeByKey(prev.skills, parsed.skills),
               prompts: mergeByKey(prev.prompts, parsed.prompts),
               agentes: mergeByKey(prev.agentes, parsed.agentes),
+              aladinChecklist: mergedAladin,
             };
           });
           notify(`TXT-1 importado: ${count} bloques procesados.`);
@@ -440,6 +475,7 @@ export default function App() {
             '  energy <0-100>        Ajusta nivel de energía GEMA',
             '  gema                  Muestra diagnóstico GEMA actual',
             '  theme [dark|light]    Cambia tema visual',
+            '  ui [variante]         Cambia interfaz (swiss, ejecutivo, terminal, editorial, zen)',
             '  focus                 Activa/desactiva Modo Focus',
             '  mission [título]      Lista misiones o crea una nueva',
             '  templates             Lista plantillas disponibles',
@@ -629,6 +665,32 @@ export default function App() {
         return;
       }
 
+      if (lower === 'ui' || lower.startsWith('ui ')) {
+        const arg = lower.slice(2).trim();
+        const validIds = INTERFACE_VARIANTS.map((v) => v.id);
+        if (!arg) {
+          appendCli(
+            'out',
+            `Interfaz activa: ${state.ajustes.interfaceVariant || 'swiss'}\nDisponibles: ${validIds.join(', ')}\nUso: ui <variante>`
+          );
+          return;
+        }
+        const matched = validIds.find((id) => id === arg);
+        if (!matched) {
+          appendCli(
+            'warn',
+            `Variante "${arg}" no válida. Usa: ${validIds.join(', ')}`
+          );
+          return;
+        }
+        setState((prev) => ({
+          ...prev,
+          ajustes: { ...prev.ajustes, interfaceVariant: matched },
+        }));
+        appendCli('ok', `Interfaz visual cambiada a "${matched}".`);
+        return;
+      }
+
       if (lower === 'focus') {
         setState((prev) => ({
           ...prev,
@@ -724,6 +786,69 @@ export default function App() {
       appendCli('err', `Comando no reconocido: "${trimmed}". Escribe "help" para ver la lista.`);
     },
     [appendCli, handleExportJson, handleExportTxt, state]
+  );
+
+  const handleImportCli = useCallback(
+    (rawText: string, fileName: string, mode: 'merge' | 'replace') => {
+      try {
+        if (fileName.toLowerCase().endsWith('.json') || rawText.trim().startsWith('{')) {
+          const parsed = JSON.parse(rawText);
+          const incomingLogs: CliLogEntry[] = Array.isArray(parsed.state?.cliLogs)
+            ? parsed.state.cliLogs
+            : Array.isArray(parsed.cliLogs)
+              ? parsed.cliLogs
+              : [];
+          if (incomingLogs.length === 0) {
+            handleImportData(rawText, fileName, mode);
+            return;
+          }
+          setCliLogs((prev) =>
+            mode === 'replace' ? incomingLogs : [...prev, ...incomingLogs].slice(-120)
+          );
+          notify(`Historial CLI importado (${incomingLogs.length} entradas).`);
+          return;
+        }
+
+        if (rawText.includes('=== HISTORIAL CLI')) {
+          const lines = rawText
+            .split(/\r?\n/)
+            .filter((l) => l.trim() && !l.startsWith('===') && !l.startsWith('FECHA:'));
+          const restored: CliLogEntry[] = lines.map((line) => ({
+            id: crypto.randomUUID(),
+            type: line.includes('[CMD]') ? 'cmd' : line.includes('[ERR]') ? 'err' : 'out',
+            text: line.replace(/^\[[^\]]+\]\s*\[[^\]]+\]\s*(\$\s*)?/, ''),
+            ts: new Date().toISOString(),
+          }));
+          setCliLogs((prev) =>
+            mode === 'replace' ? restored : [...prev, ...restored].slice(-120)
+          );
+          notify(`Historial CLI TXT importado (${restored.length} líneas).`);
+          return;
+        }
+
+        const cmdLines = rawText
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith('#') && !l.startsWith('//'));
+        if (cmdLines.length === 0) {
+          notify('No se encontraron comandos ejecutables en el archivo.', 'warn');
+          return;
+        }
+        if (mode === 'replace') {
+          setCliLogs([]);
+        }
+        for (const cmd of cmdLines.slice(0, 30)) {
+          handleRunCliCommand(cmd);
+        }
+        notify(`${Math.min(cmdLines.length, 30)} comandos ejecutados desde ${fileName}.`);
+      } catch (err) {
+        notify(
+          `Error al importar en CLI: ${err instanceof Error ? err.message : 'formato inválido'}`,
+          'warn'
+        );
+      }
+    },
+    [handleImportData, handleRunCliCommand, notify]
   );
 
   const handleVoiceCommand = useCallback(
@@ -871,10 +996,12 @@ export default function App() {
   );
   const nextPendingTask = state.tareas.find((t) => !t.done);
 
+  const activeInterface: InterfaceVariant = state.ajustes.interfaceVariant || 'swiss';
+
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="horizonte-shell min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Desktop Sidebar (256px) */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <aside className="horizonte-sidebar hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="h-16 px-5 flex items-center border-b border-slate-200 dark:border-slate-800">
           <span className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap">
             Horizonte OS
@@ -904,6 +1031,39 @@ export default function App() {
         </nav>
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div>
+            <label
+              htmlFor="sidebar-ui-selector"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1"
+            >
+              <Palette className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Estilo de interfaz</span>
+            </label>
+            <select
+              id="sidebar-ui-selector"
+              value={activeInterface}
+              onChange={(e) => {
+                const variant = e.target.value as InterfaceVariant;
+                setState((prev) => ({
+                  ...prev,
+                  ajustes: { ...prev.ajustes, interfaceVariant: variant },
+                }));
+                notify(
+                  `Interfaz cambiada a ${
+                    INTERFACE_VARIANTS.find((v) => v.id === variant)?.nombre || variant
+                  }.`
+                );
+              }}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-100"
+            >
+              {INTERFACE_VARIANTS.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={() => setVoiceOpen(true)}
@@ -932,7 +1092,7 @@ export default function App() {
       {/* Main Content Shell */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
         {/* Top Bar (3-zone contract, <=56px mobile height) */}
-        <header className="sticky top-0 z-30 h-14 lg:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between gap-8">
+        <header className="horizonte-header sticky top-0 z-30 h-14 lg:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between gap-4 sm:gap-8">
           <div className="flex items-center gap-3 min-w-0">
             <span className="lg:hidden font-display text-base font-bold tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap shrink-0">
               Horizonte OS
@@ -942,7 +1102,7 @@ export default function App() {
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 tabular-nums">
+          <div className="hidden md:flex items-center gap-5 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 tabular-nums">
             <span>GEMA {state.gema.energia}%</span>
             <button
               type="button"
@@ -961,14 +1121,41 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <label className="sr-only" htmlFor="header-ui-selector">
+              Selector de interfaz
+            </label>
+            <select
+              id="header-ui-selector"
+              aria-label="Cambiar estilo de interfaz"
+              value={activeInterface}
+              onChange={(e) => {
+                const variant = e.target.value as InterfaceVariant;
+                setState((prev) => ({
+                  ...prev,
+                  ajustes: { ...prev.ajustes, interfaceVariant: variant },
+                }));
+                notify(
+                  `Interfaz cambiada a ${
+                    INTERFACE_VARIANTS.find((v) => v.id === variant)?.nombre || variant
+                  }.`
+                );
+              }}
+              className="hidden sm:inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 min-h-[38px] text-xs font-medium text-slate-700 dark:text-slate-200"
+            >
+              {INTERFACE_VARIANTS.map((v) => (
+                <option key={v.id} value={v.id}>
+                  UI: {v.nombre}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={() => setTab('workspace')}
-              aria-label="Abrir Google Drive y Sheets"
+              aria-label="Abrir Google Workspace y Classroom"
               className="lg:hidden inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-2 min-h-[38px] text-xs font-medium text-slate-700 dark:text-slate-200"
             >
               <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              <span>Drive</span>
+              <span>Workspace</span>
             </button>
             <PWAInstallButton compact />
             <button
@@ -1101,6 +1288,7 @@ export default function App() {
                 setTab('misiones');
                 setOpenNewMissionFlag(true);
               }}
+              onImportData={handleImportData}
             />
           )}
 
@@ -1165,6 +1353,8 @@ export default function App() {
                 }));
                 notify('Tareas completadas eliminadas.');
               }}
+              onImportData={handleImportData}
+              onNotify={notify}
             />
           )}
 
@@ -1252,7 +1442,9 @@ export default function App() {
                   ),
                 }))
               }
-              onImportTxtOrJson={(txt, name) => handleImportData(txt, name, 'merge')}
+              onImportTxtOrJson={(txt, name, mode) =>
+                handleImportData(txt, name, mode || 'merge')
+              }
               onNotify={notify}
             />
           )}
@@ -1297,6 +1489,7 @@ export default function App() {
                 }));
                 notify('Checklist Aladín v0.2 reiniciada.');
               }}
+              onImportData={handleImportData}
               onNotify={notify}
             />
           )}
@@ -1323,6 +1516,7 @@ export default function App() {
                 }));
                 notify('Registro eliminado.');
               }}
+              onImportData={handleImportData}
               onNotify={notify}
             />
           )}
@@ -1377,6 +1571,17 @@ export default function App() {
                   tareas: [...fresh, ...prev.tareas],
                 }));
               }}
+              onAddMissionFromWorkspace={(mInput) => {
+                const newMission: Mission = {
+                  ...mInput,
+                  id: crypto.randomUUID(),
+                  actualizada: new Date().toISOString(),
+                };
+                setState((prev) => ({
+                  ...prev,
+                  misiones: [newMission, ...prev.misiones],
+                }));
+              }}
               onAddMemoryFromDoc={(title, content) => {
                 const mem: MemoryItem = {
                   id: crypto.randomUUID(),
@@ -1396,7 +1601,12 @@ export default function App() {
           )}
 
           {tab === 'terminal' && (
-            <TerminalView logs={cliLogs} onRunCommand={handleRunCliCommand} />
+            <TerminalView
+              logs={cliLogs}
+              onRunCommand={handleRunCliCommand}
+              onImportCli={handleImportCli}
+              onNotify={notify}
+            />
           )}
 
           {tab === 'ajustes' && (
@@ -1418,6 +1628,20 @@ export default function App() {
                   },
                 }))
               }
+              onChangeInterfaceVariant={(variant) => {
+                setState((prev) => ({
+                  ...prev,
+                  ajustes: {
+                    ...prev.ajustes,
+                    interfaceVariant: variant,
+                  },
+                }));
+                notify(
+                  `Interfaz cambiada a ${
+                    INTERFACE_VARIANTS.find((v) => v.id === variant)?.nombre || variant
+                  }.`
+                );
+              }}
               onToggleAlarm={() =>
                 setState((prev) => ({
                   ...prev,
@@ -1441,7 +1665,7 @@ export default function App() {
       {/* Mobile Bottom Tab Bar (5 primary destinations + compact <= 56px height) */}
       <nav
         aria-label="Navegación móvil"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm grid grid-cols-5"
+        className="horizonte-nav-mobile lg:hidden fixed bottom-0 left-0 right-0 z-30 h-14 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm grid grid-cols-5"
       >
         {(
           [

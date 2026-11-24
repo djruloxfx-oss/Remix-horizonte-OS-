@@ -10,8 +10,14 @@ import {
   Volume2,
   VolumeX,
   Cloud,
+  Palette,
 } from 'lucide-react';
-import type { HorizonteState, SuperAgentMode } from '../types/horizonte';
+import { INTERFACE_VARIANTS } from '../data/seedData';
+import type {
+  HorizonteState,
+  InterfaceVariant,
+  SuperAgentMode,
+} from '../types/horizonte';
 import { runDryRunDiagnostic } from '../utils/txtParser';
 import { PWAInstallButton } from '../components/PWAInstallButton';
 
@@ -19,6 +25,7 @@ interface AjustesViewProps {
   state: HorizonteState;
   onUpdateProfile: (nombre: string, objetivo: string, modo: SuperAgentMode) => void;
   onToggleTheme: () => void;
+  onChangeInterfaceVariant: (variant: InterfaceVariant) => void;
   onToggleAlarm: () => void;
   onExportJson: () => void;
   onExportTxt: () => void;
@@ -31,6 +38,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   state,
   onUpdateProfile,
   onToggleTheme,
+  onChangeInterfaceVariant,
   onToggleAlarm,
   onExportJson,
   onExportTxt,
@@ -143,6 +151,61 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
                   </>
                 )}
               </button>
+            </div>
+
+            <div className="py-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                <div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    Selector de interfaz (5 estilos visuales)
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Cambia al instante tipografía, paleta de acento, superficies y geometría. Compatible con modo claro y oscuro.
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {INTERFACE_VARIANTS.map((variant) => {
+                  const selected =
+                    (state.ajustes.interfaceVariant || 'swiss') === variant.id;
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => onChangeInterfaceVariant(variant.id)}
+                      className={`text-left rounded-lg border p-3 transition-all ${
+                        selected
+                          ? 'border-sky-600 ring-1 ring-sky-600/30 bg-sky-50/50 dark:bg-sky-950/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/60 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="w-3.5 h-3.5 rounded-sm shrink-0 border border-black/10"
+                            style={{ backgroundColor: variant.accentHex }}
+                            aria-hidden="true"
+                          />
+                          <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                            {variant.nombre}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">
+                          {selected ? 'Activa' : variant.badge}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        {variant.subtitulo}
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                        {variant.descripcion}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="py-3 flex items-center justify-between gap-4">

@@ -2,6 +2,9 @@ import { SEED_STATE } from '../data/seedData';
 import type {
   AIProviderKey,
   AgentItem,
+  AladinStep,
+  CliLogEntry,
+  EisenhowerQuadrant,
   HorizonteState,
   MemoryItem,
   MemoryType,
@@ -10,6 +13,7 @@ import type {
   MissionStatus,
   PromptItem,
   SkillItem,
+  TaskItem,
   TemplateItem,
 } from '../types/horizonte';
 
@@ -19,11 +23,13 @@ export interface ParsedTxtResult {
   alarma?: boolean;
   memoriaAutomatica?: boolean;
   misiones: Mission[];
+  tareas: TaskItem[];
   memoria: MemoryItem[];
   plantillas: TemplateItem[];
   skills: SkillItem[];
   prompts: PromptItem[];
   agentes: AgentItem[];
+  aladinChecklist: AladinStep[];
 }
 
 function normalizeIA(raw?: string): AIProviderKey {
@@ -87,14 +93,28 @@ function normalizeMemoryType(raw?: string): MemoryType {
   return found || 'Dato';
 }
 
+function normalizeQuadrant(raw?: string): EisenhowerQuadrant {
+  const s = (raw || '').trim().toLowerCase();
+  if (s === 'planificar' || s === 'delegar' || s === 'eliminar') return s;
+  return 'hacer';
+}
+
+function normalizeEnergyCost(raw?: string): TaskItem['energyCost'] {
+  const s = (raw || '').trim().toLowerCase();
+  if (s === 'bajo' || s === 'alto') return s;
+  return 'medio';
+}
+
 export function parseHorizonteTxt(text: string): ParsedTxtResult {
   const result: ParsedTxtResult = {
     misiones: [],
+    tareas: [],
     memoria: [],
     plantillas: [],
     skills: [],
     prompts: [],
     agentes: [],
+    aladinChecklist: [],
   };
 
   const lines = text.replace(/\r\n/g, '\n').split('\n');
@@ -156,6 +176,18 @@ export function parseHorizonteTxt(text: string): ParsedTxtResult {
         pasos,
         actualizada: new Date().toISOString(),
       });
+    } else if (type === 'TAREA' && fields.TITULO) {
+      result.tareas.push({
+        id: crypto.randomUUID(),
+        titulo: fields.TITULO.trim(),
+        quadrant: normalizeQuadrant(fields.CUADRANTE),
+        done: ['si', 'sí', 'true', '1', 'completada', 'hecha'].includes(
+          (fields.ESTADO || fields.COMPLETADA || '').trim().toLowerCase()
+        ),
+        energyCost: normalizeEnergyCost(fields.ENERGIA),
+        missionId: fields.MISION?.trim() || undefined,
+        createdAt: fields.FECHA?.trim() || new Date().toISOString(),
+      });
     } else if (type === 'MEMORIA' && (fields.TITULO || fields.CONTENIDO)) {
       result.memoria.push({
         id: crypto.randomUUID(),
@@ -191,6 +223,7 @@ export function parseHorizonteTxt(text: string): ParsedTxtResult {
         id: crypto.randomUUID(),
         titulo: fields.TITULO.trim(),
         ia: normalizeIA(fields.IA),
+        categoria: (fields.CATEGORIA || 'General').trim(),
         contenido: (fields.CONTENIDO || '').trim(),
         activa: false,
       });
@@ -199,8 +232,19 @@ export function parseHorizonteTxt(text: string): ParsedTxtResult {
         id: crypto.randomUUID(),
         titulo: fields.TITULO.trim(),
         ia: normalizeIA(fields.IA),
+        categoria: (fields.CATEGORIA || 'General').trim(),
         contenido: (fields.CONTENIDO || '').trim(),
         activa: false,
+      });
+    } else if (type === 'ALADIN' && fields.TITULO) {
+      const stepNum = Number.parseInt(fields.PASO || '', 10);
+      result.aladinChecklist.push({
+        id: Number.isNaN(stepNum) ? result.aladinChecklist.length + 1 : stepNum,
+        titulo: fields.TITULO.trim(),
+        detalle: (fields.DETALLE || fields.CONTENIDO || '').trim(),
+        completed: ['si', 'sí', 'true', '1', 'completada'].includes(
+          (fields.COMPLETADA || fields.ESTADO || '').trim().toLowerCase()
+        ),
       });
     }
 
@@ -235,6 +279,12 @@ export function parseHorizonteTxt(text: string): ParsedTxtResult {
     'PLAN A',
     'PLAN B',
     'RIESGO',
+    'CUADRANTE',
+    'ENERGIA',
+    'COMPLETADA',
+    'MISION',
+    'PASO',
+    'DETALLE',
   ];
 
   const multiFieldKeys = ['CONTENIDO', 'INSTRUCCIONES', 'PASOS'];
@@ -319,6 +369,17 @@ export function exportHorizonteTxt(state: HorizonteState): string {
     }
   }
 
+  for (const t of state.tareas) {
+    parts.push('');
+    parts.push('=== TAREA ===');
+    parts.push(`TITULO: ${t.titulo}`);
+    parts.push(`CUADRANTE: ${t.quadrant}`);
+    parts.push(`ENERGIA: ${t.energyCost}`);
+    parts.push(`COMPLETADA: ${t.done ? 'si' : 'no'}`);
+    if (t.missionId) parts.push(`MISION: ${t.missionId}`);
+    parts.push(`FECHA: ${t.createdAt}`);
+  }
+
   for (const mem of state.memoria) {
     parts.push('');
     parts.push('=== MEMORIA ===');
@@ -335,6 +396,7 @@ export function exportHorizonteTxt(state: HorizonteState): string {
     parts.push('=== PROMPT ===');
     parts.push(`TITULO: ${pr.titulo}`);
     parts.push(`IA: ${pr.ia}`);
+    if (pr.categoria) parts.push(`CATEGORIA: ${pr.categoria}`);
     parts.push('CONTENIDO:');
     parts.push(pr.contenido);
   }
@@ -344,6 +406,7 @@ export function exportHorizonteTxt(state: HorizonteState): string {
     parts.push('=== SKILL ===');
     parts.push(`TITULO: ${sk.titulo}`);
     parts.push(`IA: ${sk.ia}`);
+    if (sk.categoria) parts.push(`CATEGORIA: ${sk.categoria}`);
     parts.push('CONTENIDO:');
     parts.push(sk.contenido);
   }
@@ -376,6 +439,15 @@ export function exportHorizonteTxt(state: HorizonteState): string {
     parts.push(`FIABILIDAD: ${ag.fiabilidad}`);
     parts.push('INSTRUCCIONES:');
     parts.push(ag.instrucciones);
+  }
+
+  for (const st of state.aladinChecklist || []) {
+    parts.push('');
+    parts.push('=== ALADIN ===');
+    parts.push(`PASO: ${st.id}`);
+    parts.push(`TITULO: ${st.titulo}`);
+    parts.push(`COMPLETADA: ${st.completed ? 'si' : 'no'}`);
+    parts.push(`DETALLE: ${st.detalle}`);
   }
 
   return parts.join('\n');
@@ -464,6 +536,7 @@ export function migrateJsonState(rawInput: unknown): Partial<HorizonteState> {
       id: String(s.id || crypto.randomUUID()),
       titulo: String(s.titulo || s.title || 'Skill'),
       ia: normalizeIA(String(s.ia || 'general')),
+      categoria: s.categoria ? String(s.categoria) : 'General',
       contenido: String(s.contenido || s.content || ''),
       activa: Boolean(s.activa),
     }));
@@ -474,6 +547,7 @@ export function migrateJsonState(rawInput: unknown): Partial<HorizonteState> {
       id: String(p.id || crypto.randomUUID()),
       titulo: String(p.titulo || p.title || 'Prompt'),
       ia: normalizeIA(String(p.ia || 'general')),
+      categoria: p.categoria ? String(p.categoria) : 'General',
       contenido: String(p.contenido || p.content || ''),
       ficha: p.ficha ? String(p.ficha) : undefined,
       activa: Boolean(p.activa),
@@ -482,6 +556,10 @@ export function migrateJsonState(rawInput: unknown): Partial<HorizonteState> {
 
   if (Array.isArray(rawObj.agentes)) {
     partial.agentes = rawObj.agentes as AgentItem[];
+  }
+
+  if (Array.isArray(rawObj.aladinChecklist)) {
+    partial.aladinChecklist = rawObj.aladinChecklist as AladinStep[];
   }
 
   if (rawObj.gema && typeof rawObj.gema === 'object') {
@@ -506,6 +584,150 @@ export function exportHorizonteJson(state: HorizonteState): string {
     null,
     2
   );
+}
+
+export function downloadTextFile(
+  content: string,
+  filename: string,
+  mime = 'text/plain;charset=utf-8'
+) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function exportSectionJson(section: string, stateSlice: Record<string, unknown>): string {
+  return JSON.stringify(
+    {
+      version: '19.4',
+      schema: '19.3.0',
+      module: section,
+      exportedAt: new Date().toISOString(),
+      state: stateSlice,
+    },
+    null,
+    2
+  );
+}
+
+export function exportPartialTxt(options: {
+  title: string;
+  misiones?: Mission[];
+  tareas?: TaskItem[];
+  memoria?: MemoryItem[];
+  prompts?: PromptItem[];
+  skills?: SkillItem[];
+  plantillas?: TemplateItem[];
+  agentes?: AgentItem[];
+  aladinChecklist?: AladinStep[];
+}): string {
+  const parts: string[] = [
+    `=== COPIA HORIZONTE OS (${options.title.toUpperCase()}) ===`,
+    'VERSION: 19.4',
+    'FORMATO: TXT-1',
+  ];
+
+  for (const m of options.misiones || []) {
+    parts.push('', '=== MISION ===', `TITULO: ${m.titulo}`);
+    if (m.categoria) parts.push(`CATEGORIA: ${m.categoria}`);
+    if (m.objetivo) parts.push(`OBJETIVO: ${m.objetivo}`);
+    if (m.resultado) parts.push(`RESULTADO: ${m.resultado}`);
+    parts.push(`PRIORIDAD: ${m.prioridad}`, `ESTADO: ${m.estado}`);
+    if (m.criterios) parts.push(`CRITERIO DE EXITO: ${m.criterios}`);
+    if (m.siguiente) parts.push(`PROXIMA ACCION: ${m.siguiente}`);
+    if (m.pasos && m.pasos.length > 0) parts.push('PASOS:', m.pasos.join('; ') + '.');
+  }
+
+  for (const t of options.tareas || []) {
+    parts.push(
+      '',
+      '=== TAREA ===',
+      `TITULO: ${t.titulo}`,
+      `CUADRANTE: ${t.quadrant}`,
+      `ENERGIA: ${t.energyCost}`,
+      `COMPLETADA: ${t.done ? 'si' : 'no'}`,
+      `FECHA: ${t.createdAt}`
+    );
+  }
+
+  for (const mem of options.memoria || []) {
+    parts.push(
+      '',
+      '=== MEMORIA ===',
+      `TITULO: ${mem.titulo}`,
+      `TIPO: ${mem.tipo}`
+    );
+    if (mem.proyecto) parts.push(`PROYECTO: ${mem.proyecto}`);
+    parts.push(`FECHA: ${mem.fecha}`, 'CONTENIDO:', mem.contenido);
+  }
+
+  for (const pr of options.prompts || []) {
+    parts.push('', '=== PROMPT ===', `TITULO: ${pr.titulo}`, `IA: ${pr.ia}`);
+    if (pr.categoria) parts.push(`CATEGORIA: ${pr.categoria}`);
+    parts.push('CONTENIDO:', pr.contenido);
+  }
+
+  for (const sk of options.skills || []) {
+    parts.push('', '=== SKILL ===', `TITULO: ${sk.titulo}`, `IA: ${sk.ia}`);
+    if (sk.categoria) parts.push(`CATEGORIA: ${sk.categoria}`);
+    parts.push('CONTENIDO:', sk.contenido);
+  }
+
+  for (const pl of options.plantillas || []) {
+    parts.push('', '=== PLANTILLA ===', `TITULO: ${pl.titulo}`);
+    if (pl.categoria) parts.push(`CATEGORIA: ${pl.categoria}`);
+    if (pl.prioridad) parts.push(`PRIORIDAD: ${pl.prioridad}`);
+    if (pl.objetivo) parts.push(`OBJETIVO: ${pl.objetivo}`);
+    if (pl.resultado) parts.push(`RESULTADO: ${pl.resultado}`);
+    if (pl.criterioExito) parts.push(`CRITERIO DE EXITO: ${pl.criterioExito}`);
+    if (pl.proximaAccion) parts.push(`PROXIMA ACCION: ${pl.proximaAccion}`);
+    if (pl.pasos) parts.push('PASOS:', pl.pasos);
+  }
+
+  for (const ag of options.agentes || []) {
+    parts.push(
+      '',
+      '=== AGENTE ===',
+      `NOMBRE: ${ag.nombre}`,
+      `CATEGORIA: ${ag.categoria}`,
+      `ROL: ${ag.rol}`,
+      `ESPECIALIDADES: ${ag.especialidades}`,
+      `HERRAMIENTAS: ${ag.herramientas}`,
+      `COSTE: ${ag.coste}`,
+      `FIABILIDAD: ${ag.fiabilidad}`,
+      'INSTRUCCIONES:',
+      ag.instrucciones
+    );
+  }
+
+  for (const st of options.aladinChecklist || []) {
+    parts.push(
+      '',
+      '=== ALADIN ===',
+      `PASO: ${st.id}`,
+      `TITULO: ${st.titulo}`,
+      `COMPLETADA: ${st.completed ? 'si' : 'no'}`,
+      `DETALLE: ${st.detalle}`
+    );
+  }
+
+  return parts.join('\n');
+}
+
+export function exportCliLogsTxt(logs: CliLogEntry[]): string {
+  const lines = [
+    '=== HISTORIAL CLI HORIZONTE OS ===',
+    `FECHA: ${new Date().toISOString()}`,
+    '',
+    ...logs.map((l) => `[${l.ts}] [${l.type.toUpperCase()}] ${l.type === 'cmd' ? `$ ${l.text}` : l.text}`),
+  ];
+  return lines.join('\n');
 }
 
 export function runDryRunDiagnostic(state: HorizonteState): {

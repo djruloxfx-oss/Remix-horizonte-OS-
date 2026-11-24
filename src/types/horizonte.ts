@@ -103,6 +103,7 @@ export interface SkillItem {
   id: string;
   titulo: string;
   ia: AIProviderKey;
+  categoria?: string;
   contenido: string;
   activa: boolean;
 }
@@ -111,6 +112,7 @@ export interface PromptItem {
   id: string;
   titulo: string;
   ia: AIProviderKey;
+  categoria?: string;
   contenido: string;
   ficha?: string;
   activa: boolean;
@@ -165,8 +167,16 @@ export interface UserProfile {
   superAgenteModo: SuperAgentMode;
 }
 
+export type InterfaceVariant =
+  | 'swiss'
+  | 'ejecutivo'
+  | 'terminal'
+  | 'editorial'
+  | 'zen';
+
 export interface UserSettings {
   theme: 'light' | 'dark';
+  interfaceVariant: InterfaceVariant;
   memoriaAutomatica: boolean;
   alarma: boolean;
   focusMode: boolean;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Copy,
   ExternalLink,
@@ -11,8 +11,18 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Wand2,
 } from 'lucide-react';
-import { AI_PROVIDERS } from '../data/seedData';
+import {
+  AI_PROVIDERS,
+  BIBLIOTECA_CATEGORIES,
+  PROMPT_SUGGESTIONS,
+  SKILL_SUGGESTIONS,
+  type SuggestedBibliotecaItem,
+} from '../data/seedData';
 import type {
   AIProviderKey,
   MemoryItem,
@@ -22,6 +32,13 @@ import type {
   TemplateItem,
 } from '../types/horizonte';
 import { Modal } from '../components/Modal';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import { analyzePrompt } from '../utils/promptAnalyzer';
+import {
+  downloadTextFile,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface BibliotecaViewProps {
   plantillas: TemplateItem[];
@@ -37,7 +54,7 @@ interface BibliotecaViewProps {
   onSavePrompt: (p: PromptItem) => void;
   onDeletePrompt: (id: string) => void;
   onTogglePrompt: (id: string) => void;
-  onImportTxtOrJson: (rawText: string, fileName: string) => void;
+  onImportTxtOrJson: (rawText: string, fileName: string, mode?: 'merge' | 'replace') => void;
   onNotify: (msg: string, kind?: 'ok' | 'warn' | 'info') => void;
 }
 
@@ -60,8 +77,13 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
 }) => {
   const [sub, setSub] = useState<'prompts' | 'skills' | 'plantillas'>('prompts');
   const [iaFilter, setIaFilter] = useState<'todos' | AIProviderKey>('todos');
+  const [categoryFilter, setCategoryFilter] = useState<string>('Todas');
   const [query, setQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+
+  // Prompt optimizer / analyzer modal target
+  const [optimizeTarget, setOptimizeTarget] = useState<PromptItem | null>(null);
 
   // Modals
   const [editPrompt, setEditPrompt] = useState<PromptItem | null>(null);
@@ -73,6 +95,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
   const [importOpen, setImportOpen] = useState(false);
   const [pasteTitle, setPasteTitle] = useState('');
   const [pasteIa, setPasteIa] = useState<AIProviderKey>('general');
+  const [pasteCategory, setPasteCategory] = useState<string>('Productividad');
   const [pasteContent, setPasteContent] = useState('');
 
   const copyText = async (text: string, label: string) => {
@@ -117,32 +140,86 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
     await copyText(blocks.join('\n'), 'Pack de instrucciones activas');
   };
 
-  const filterList = <T extends { titulo: string; contenido: string; ia?: AIProviderKey }>(
+  const availableCategories = useMemo(() => {
+    const customFromItems = [
+      ...prompts.map((p) => p.categoria),
+      ...skills.map((s) => s.categoria),
+      ...plantillas.map((pl) => pl.categoria),
+    ].filter((c): c is string => Boolean(c && c.trim()));
+    return [
+      'Todas',
+      ...Array.from(new Set([...BIBLIOTECA_CATEGORIES, ...customFromItems])),
+    ];
+  }, [plantillas, prompts, skills]);
+
+  const filterList = <
+    T extends { titulo: string; contenido: string; ia?: AIProviderKey; categoria?: string },
+  >(
     items: T[]
   ) => {
     return items.filter((item) => {
       const matchesIA = iaFilter === 'todos' || (item.ia || 'general') === iaFilter;
+      const matchesCat =
+        categoryFilter === 'Todas' ||
+        (item.categoria || 'General').toLowerCase() === categoryFilter.toLowerCase();
       const matchesQ =
         !query.trim() ||
-        `${item.titulo} ${item.contenido}`.toLowerCase().includes(query.toLowerCase());
-      return matchesIA && matchesQ;
+        `${item.titulo} ${item.categoria || ''} ${item.contenido}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+      return matchesIA && matchesCat && matchesQ;
     });
   };
 
   const filteredPrompts = filterList(prompts);
   const filteredSkills = filterList(skills);
-  const filteredPlantillas = plantillas.filter(
-    (p) =>
+  const filteredPlantillas = plantillas.filter((p) => {
+    const matchesCat =
+      categoryFilter === 'Todas' ||
+      (p.categoria || 'General').toLowerCase() === categoryFilter.toLowerCase();
+    const matchesQ =
       !query.trim() ||
       `${p.titulo} ${p.categoria || ''} ${p.objetivo || ''} ${p.contenido}`
         .toLowerCase()
-        .includes(query.toLowerCase())
+        .includes(query.toLowerCase());
+    return matchesCat && matchesQ;
+  });
+
+  const filteredSuggestions: SuggestedBibliotecaItem[] = useMemo(() => {
+    const pool = sub === 'skills' ? SKILL_SUGGESTIONS : PROMPT_SUGGESTIONS;
+    return pool.filter((item) => {
+      const matchesCat =
+        categoryFilter === 'Todas' ||
+        item.categoria.toLowerCase() === categoryFilter.toLowerCase();
+      const matchesQ =
+        !query.trim() ||
+        `${item.titulo} ${item.categoria} ${item.contenido}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+      return matchesCat && matchesQ;
+    });
+  }, [categoryFilter, query, sub]);
+
+  const editPromptAnalysis = useMemo(
+    () =>
+      editPrompt
+        ? analyzePrompt(editPrompt.contenido, editPrompt.categoria || 'General')
+        : null,
+    [editPrompt]
+  );
+
+  const optimizeAnalysis = useMemo(
+    () =>
+      optimizeTarget
+        ? analyzePrompt(optimizeTarget.contenido, optimizeTarget.categoria || 'General')
+        : null,
+    [optimizeTarget]
   );
 
   return (
     <div className="space-y-6">
       {/* Header actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-1 self-start">
           <button
             type="button"
@@ -180,10 +257,66 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <ModuleExportImportBar
+            label={
+              sub === 'prompts'
+                ? 'Prompts'
+                : sub === 'skills'
+                  ? 'Skills'
+                  : 'Plantillas'
+            }
+            onExportJson={() => {
+              if (sub === 'prompts') {
+                downloadTextFile(
+                  exportSectionJson('prompts', { prompts }),
+                  'horizonte-prompts.json',
+                  'application/json'
+                );
+                onNotify(`${prompts.length} prompts exportados en JSON.`);
+              } else if (sub === 'skills') {
+                downloadTextFile(
+                  exportSectionJson('skills', { skills }),
+                  'horizonte-skills.json',
+                  'application/json'
+                );
+                onNotify(`${skills.length} skills exportadas en JSON.`);
+              } else {
+                downloadTextFile(
+                  exportSectionJson('plantillas', { plantillas }),
+                  'horizonte-plantillas.json',
+                  'application/json'
+                );
+                onNotify(`${plantillas.length} plantillas exportadas en JSON.`);
+              }
+            }}
+            onExportTxt={() => {
+              if (sub === 'prompts') {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Prompts', prompts }),
+                  'horizonte_prompts_txt1.txt'
+                );
+                onNotify(`${prompts.length} prompts exportados en TXT-1.`);
+              } else if (sub === 'skills') {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Skills', skills }),
+                  'horizonte_skills_txt1.txt'
+                );
+                onNotify(`${skills.length} skills exportadas en TXT-1.`);
+              } else {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Plantillas', plantillas }),
+                  'horizonte_plantillas_txt1.txt'
+                );
+                onNotify(`${plantillas.length} plantillas exportadas en TXT-1.`);
+              }
+            }}
+            onImportFile={(text, name, mode) => onImportTxtOrJson(text, name, mode)}
+          />
+
           <button
             type="button"
             onClick={copyActiveBundle}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3.5 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <Layers className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Copiar pack activo</span>
@@ -192,20 +325,23 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3.5 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Importar TXT / JSON</span>
+            <span>Pegar texto</span>
           </button>
 
           <button
             type="button"
             onClick={() => {
+              const defaultCat =
+                categoryFilter === 'Todas' ? 'Productividad' : categoryFilter;
               if (sub === 'prompts') {
                 setEditPrompt({
                   id: '',
                   titulo: '',
                   ia: 'general',
+                  categoria: defaultCat,
                   contenido: '',
                   activa: false,
                 });
@@ -214,6 +350,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                   id: '',
                   titulo: '',
                   ia: 'general',
+                  categoria: defaultCat,
                   contenido: '',
                   activa: false,
                 });
@@ -221,7 +358,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 setEditPlantilla({
                   id: '',
                   titulo: '',
-                  categoria: 'Productividad',
+                  categoria: defaultCat,
                   prioridad: 'Media',
                   objetivo: '',
                   resultado: '',
@@ -231,7 +368,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 });
               }
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
             <span>
@@ -245,7 +382,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
         </div>
       </div>
 
-      {/* Search + AI Folders */}
+      {/* Search + Category Filter + AI Folders */}
       <div className="space-y-3">
         <div className="relative">
           <Search
@@ -256,21 +393,45 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar en la biblioteca por título o contenido..."
+            placeholder="Buscar en la biblioteca por título, categoría o contenido..."
             className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
           />
         </div>
 
+        {/* Categories bar (for Prompts, Skills and Plantillas) */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-1">
+            Categoría:
+          </span>
+          {availableCategories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-colors whitespace-nowrap ${
+                categoryFilter === cat
+                  ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-200 font-semibold'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
         {sub !== 'plantillas' && (
           <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-1">
+              Modelo IA:
+            </span>
             {(['todos', ...Object.keys(AI_PROVIDERS)] as ('todos' | AIProviderKey)[]).map((k) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setIaFilter(k)}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-colors whitespace-nowrap ${
                   iaFilter === k
-                    ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-200'
+                    ? 'border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
@@ -281,12 +442,125 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
         )}
       </div>
 
+      {/* Category-based suggestions panel for Prompts & Skills */}
+      {sub !== 'plantillas' && (
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+              <h2 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                Sugerencias recomendadas de {sub === 'prompts' ? 'Prompts' : 'Skills'}
+                {categoryFilter !== 'Todas' ? ` · Categoría ${categoryFilter}` : ' por categoría'}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSuggestions((v) => !v)}
+              className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              {showSuggestions ? 'Ocultar sugerencias' : 'Ver sugerencias'}
+            </button>
+          </div>
+
+          {showSuggestions && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {filteredSuggestions.map((sug) => {
+                const alreadyAdded = (sub === 'prompts' ? prompts : skills).some(
+                  (x) => x.titulo.toLowerCase() === sug.titulo.toLowerCase()
+                );
+                return (
+                  <div
+                    key={sug.id}
+                    className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 p-3 flex flex-col justify-between gap-2.5"
+                  >
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        {sug.categoria} · {AI_PROVIDERS[sug.ia].nombre}
+                      </div>
+                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        {sug.titulo}
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-3 whitespace-pre-line">
+                        {sug.contenido}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (sub === 'prompts') {
+                            setEditPrompt({
+                              id: '',
+                              titulo: sug.titulo,
+                              ia: sug.ia,
+                              categoria: sug.categoria,
+                              contenido: sug.contenido,
+                              activa: false,
+                            });
+                          } else {
+                            setEditSkill({
+                              id: '',
+                              titulo: sug.titulo,
+                              ia: sug.ia,
+                              categoria: sug.categoria,
+                              contenido: sug.contenido,
+                              activa: false,
+                            });
+                          }
+                        }}
+                        className="text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:underline"
+                      >
+                        Personalizar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={alreadyAdded}
+                        onClick={() => {
+                          if (sub === 'prompts') {
+                            onSavePrompt({
+                              id: crypto.randomUUID(),
+                              titulo: sug.titulo,
+                              ia: sug.ia,
+                              categoria: sug.categoria,
+                              contenido: sug.contenido,
+                              activa: false,
+                            });
+                          } else {
+                            onSaveSkill({
+                              id: crypto.randomUUID(),
+                              titulo: sug.titulo,
+                              ia: sug.ia,
+                              categoria: sug.categoria,
+                              contenido: sug.contenido,
+                              activa: false,
+                            });
+                          }
+                        }}
+                        className="rounded-md bg-sky-600 hover:bg-sky-700 disabled:opacity-45 text-white px-2.5 py-1 text-[11px] font-semibold"
+                      >
+                        {alreadyAdded ? 'Ya añadida' : 'Añadir a biblioteca'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredSuggestions.length === 0 && (
+                <div className="col-span-full text-xs text-slate-500 dark:text-slate-400 py-2">
+                  No hay sugerencias predefinidas para esta combinación; selecciona &ldquo;Todas&rdquo; para ver todo el catálogo.
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Content lists */}
       {sub === 'prompts' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredPrompts.map((p) => {
             const provider = AI_PROVIDERS[p.ia || 'general'];
             const expanded = expandedId === p.id;
+            const quickAnalysis = analyzePrompt(p.contenido, p.categoria);
             return (
               <article
                 key={p.id}
@@ -295,7 +569,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {provider.nombre} ·{' '}
+                      {p.categoria || 'General'} · {provider.nombre} ·{' '}
                       <span
                         className={
                           p.activa
@@ -306,17 +580,22 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                         {p.activa ? 'Activo en pack' : 'Inactivo'}
                       </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => onTogglePrompt(p.id)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                        p.activa
-                          ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {p.activa ? 'Desactivar' : 'Activar'}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                        Calidad {quickAnalysis.score}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onTogglePrompt(p.id)}
+                        className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          p.activa
+                            ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {p.activa ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -355,7 +634,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 flex-wrap">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={() => copyText(p.contenido, 'Prompt')}
@@ -363,6 +642,14 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                     >
                       <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Copiar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOptimizeTarget({ ...p })}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50/70 dark:bg-sky-950/30 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-100/70"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Mejorar</span>
                     </button>
                     {provider.url !== '#' && (
                       <a
@@ -402,7 +689,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
           })}
           {filteredPrompts.length === 0 && (
             <div className="lg:col-span-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center text-sm text-slate-500">
-              No hay prompts en esta carpeta.
+              No hay prompts en esta categoría o filtro.
             </div>
           )}
         </div>
@@ -421,7 +708,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {provider.nombre} ·{' '}
+                      {s.categoria || 'General'} · {provider.nombre} ·{' '}
                       <span
                         className={
                           s.activa
@@ -496,6 +783,11 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
               </article>
             );
           })}
+          {filteredSkills.length === 0 && (
+            <div className="lg:col-span-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center text-sm text-slate-500">
+              No hay skills en esta categoría o filtro.
+            </div>
+          )}
         </div>
       )}
 
@@ -555,6 +847,118 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
         </div>
       )}
 
+      {/* Modal: Prompt Analyzer & Optimizer */}
+      <Modal
+        open={Boolean(optimizeTarget)}
+        title={`Mejorar Prompt · ${optimizeTarget?.titulo || ''}`}
+        onClose={() => setOptimizeTarget(null)}
+        maxWidthClass="max-w-3xl"
+      >
+        {optimizeTarget && optimizeAnalysis && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  Evaluación estructural ({optimizeAnalysis.grade})
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Comprobación en 5 pilares: Rol, Objetivo, Variables/Contexto, Reglas de verificación y Formato.
+                </div>
+              </div>
+              <div className="text-lg font-mono font-bold text-sky-600 dark:text-sky-400 tabular-nums">
+                {optimizeAnalysis.score}%
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {optimizeAnalysis.checks.map((c) => (
+                <div
+                  key={c.id}
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      {c.passed ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      )}
+                      <span>{c.label}</span>
+                    </div>
+                    {!c.passed && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOptimizeTarget({
+                            ...optimizeTarget,
+                            contenido: `${optimizeTarget.contenido.trim()}\n\n${c.snippet}`,
+                          })
+                        }
+                        className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline shrink-0"
+                      >
+                        + Añadir
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {c.tip}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Prompt editable (vista previa en tiempo real)
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOptimizeTarget({
+                      ...optimizeTarget,
+                      contenido: optimizeAnalysis.improvedPrompt,
+                    })
+                  }
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Aplicar mejora completa</span>
+                </button>
+              </div>
+              <textarea
+                rows={8}
+                value={optimizeTarget.contenido}
+                onChange={(e) =>
+                  setOptimizeTarget({ ...optimizeTarget, contenido: e.target.value })
+                }
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs font-mono"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setOptimizeTarget(null)}
+                className="rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onSavePrompt(optimizeTarget);
+                  setOptimizeTarget(null);
+                }}
+                className="rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 text-xs font-semibold"
+              >
+                Guardar prompt mejorado
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Modal: Prompt */}
       <Modal
         open={Boolean(editPrompt)}
@@ -571,6 +975,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 ...editPrompt,
                 id: editPrompt.id || crypto.randomUUID(),
                 titulo: editPrompt.titulo.trim(),
+                categoria: editPrompt.categoria || 'General',
               });
               setEditPrompt(null);
             }}
@@ -589,29 +994,69 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                Optimizado para
-              </label>
-              <select
-                value={editPrompt.ia}
-                onChange={(e) =>
-                  setEditPrompt({ ...editPrompt, ia: e.target.value as AIProviderKey })
-                }
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
-              >
-                {Object.entries(AI_PROVIDERS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.nombre}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  Optimizado para
+                </label>
+                <select
+                  value={editPrompt.ia}
+                  onChange={(e) =>
+                    setEditPrompt({ ...editPrompt, ia: e.target.value as AIProviderKey })
+                  }
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+                >
+                  {Object.entries(AI_PROVIDERS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  Categoría
+                </label>
+                <select
+                  value={editPrompt.categoria || 'General'}
+                  onChange={(e) =>
+                    setEditPrompt({ ...editPrompt, categoria: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+                >
+                  <option value="General">General</option>
+                  {BIBLIOTECA_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                Instrucciones del prompt *
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Instrucciones del prompt *
+                </label>
+                {editPromptAnalysis && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditPrompt({
+                        ...editPrompt,
+                        contenido: editPromptAnalysis.improvedPrompt,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>
+                      Mejorar estructura ({editPromptAnalysis.score}%)
+                    </span>
+                  </button>
+                )}
+              </div>
               <textarea
                 required
                 rows={8}
@@ -656,6 +1101,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 ...editSkill,
                 id: editSkill.id || crypto.randomUUID(),
                 titulo: editSkill.titulo.trim(),
+                categoria: editSkill.categoria || 'General',
               });
               setEditSkill(null);
             }}
@@ -673,23 +1119,44 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                Optimizado para
-              </label>
-              <select
-                value={editSkill.ia}
-                onChange={(e) =>
-                  setEditSkill({ ...editSkill, ia: e.target.value as AIProviderKey })
-                }
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
-              >
-                {Object.entries(AI_PROVIDERS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.nombre}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  Optimizado para
+                </label>
+                <select
+                  value={editSkill.ia}
+                  onChange={(e) =>
+                    setEditSkill({ ...editSkill, ia: e.target.value as AIProviderKey })
+                  }
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+                >
+                  {Object.entries(AI_PROVIDERS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  Categoría
+                </label>
+                <select
+                  value={editSkill.categoria || 'General'}
+                  onChange={(e) =>
+                    setEditSkill({ ...editSkill, categoria: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+                >
+                  <option value="General">General</option>
+                  {BIBLIOTECA_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
@@ -886,7 +1353,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
       {/* Modal: Importar archivo TXT-1 / JSON o pegar texto */}
       <Modal
         open={importOpen}
-        title="Importar TXT-1, JSON o texto pegado"
+        title="Importar TXT-1, JSON o pegar texto"
         onClose={() => setImportOpen(false)}
       >
         <div className="space-y-5">
@@ -901,7 +1368,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const text = await file.text();
-                onImportTxtOrJson(text, file.name);
+                onImportTxtOrJson(text, file.name, 'merge');
                 setImportOpen(false);
               }}
               className="w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm"
@@ -917,6 +1384,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                   id: crypto.randomUUID(),
                   titulo: pasteTitle.trim(),
                   ia: pasteIa,
+                  categoria: pasteCategory,
                   contenido: pasteContent.trim(),
                   activa: false,
                 });
@@ -925,6 +1393,7 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
                   id: crypto.randomUUID(),
                   titulo: pasteTitle.trim(),
                   ia: pasteIa,
+                  categoria: pasteCategory,
                   contenido: pasteContent.trim(),
                   activa: false,
                 });
@@ -945,17 +1414,30 @@ export const BibliotecaView: React.FC<BibliotecaViewProps> = ({
               placeholder="Título"
               className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
             />
-            <select
-              value={pasteIa}
-              onChange={(e) => setPasteIa(e.target.value as AIProviderKey)}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
-            >
-              {Object.entries(AI_PROVIDERS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={pasteIa}
+                onChange={(e) => setPasteIa(e.target.value as AIProviderKey)}
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+              >
+                {Object.entries(AI_PROVIDERS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.nombre}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={pasteCategory}
+                onChange={(e) => setPasteCategory(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
+              >
+                {BIBLIOTECA_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
             <textarea
               rows={4}
               value={pasteContent}

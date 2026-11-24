@@ -1,10 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Terminal as TerminalIcon, CornerDownLeft } from 'lucide-react';
 import type { CliLogEntry } from '../types/horizonte';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import {
+  downloadTextFile,
+  exportCliLogsTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface TerminalViewProps {
   logs: CliLogEntry[];
   onRunCommand: (raw: string) => void;
+  onImportCli: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
+  onNotify: (msg: string, kind?: 'ok' | 'warn' | 'info') => void;
 }
 
 const QUICK_COMMANDS = [
@@ -17,6 +25,7 @@ const QUICK_COMMANDS = [
   'gema',
   'focus',
   'theme',
+  'ui',
   'templates',
   'memories',
   'agents',
@@ -26,7 +35,12 @@ const QUICK_COMMANDS = [
   'clear',
 ];
 
-export const TerminalView: React.FC<TerminalViewProps> = ({ logs, onRunCommand }) => {
+export const TerminalView: React.FC<TerminalViewProps> = ({
+  logs,
+  onRunCommand,
+  onImportCli,
+  onNotify,
+}) => {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState<number>(-1);
@@ -67,9 +81,30 @@ export const TerminalView: React.FC<TerminalViewProps> = ({ logs, onRunCommand }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
-          Comandos rápidos
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+            Comandos rápidos
+          </div>
+          <ModuleExportImportBar
+            label="Historial / Script CLI"
+            onExportJson={() => {
+              downloadTextFile(
+                exportSectionJson('cli', { cliLogs: logs }),
+                'horizonte-cli-logs.json',
+                'application/json'
+              );
+              onNotify('Historial CLI exportado en JSON.');
+            }}
+            onExportTxt={() => {
+              downloadTextFile(
+                exportCliLogsTxt(logs),
+                'horizonte_cli_logs.txt'
+              );
+              onNotify('Historial CLI exportado en TXT.');
+            }}
+            onImportFile={onImportCli}
+          />
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {QUICK_COMMANDS.map((cmd) => (

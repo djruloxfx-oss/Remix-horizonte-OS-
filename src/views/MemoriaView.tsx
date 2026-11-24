@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import { Plus, Copy, Edit3, Trash2, Search, Shield } from 'lucide-react';
 import type { MemoryItem, MemoryType } from '../types/horizonte';
 import { Modal } from '../components/Modal';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import {
+  downloadTextFile,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface MemoriaViewProps {
   memoria: MemoryItem[];
   onSaveMemoria: (m: MemoryItem) => void;
   onDeleteMemoria: (id: string) => void;
+  onImportData: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
   onNotify: (msg: string, kind?: 'ok' | 'warn' | 'info') => void;
 }
 
@@ -27,6 +34,7 @@ export const MemoriaView: React.FC<MemoriaViewProps> = ({
   memoria,
   onSaveMemoria,
   onDeleteMemoria,
+  onImportData,
   onNotify,
 }) => {
   const [query, setQuery] = useState('');
@@ -90,13 +98,32 @@ export const MemoriaView: React.FC<MemoriaViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <ModuleExportImportBar
+            label="Memoria"
+            onExportJson={() => {
+              downloadTextFile(
+                exportSectionJson('memoria', { memoria }),
+                'horizonte-memoria.json',
+                'application/json'
+              );
+              onNotify(`${memoria.length} registros de memoria exportados en JSON.`);
+            }}
+            onExportTxt={() => {
+              downloadTextFile(
+                exportPartialTxt({ title: 'Memoria', memoria }),
+                'horizonte_memoria_txt1.txt'
+              );
+              onNotify(`${memoria.length} registros de memoria exportados en TXT-1.`);
+            }}
+            onImportFile={onImportData}
+          />
           <button
             type="button"
             onClick={copyPermanentTxt}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3.5 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <Copy className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Copiar Memoria Permanente TXT</span>
+            <span>Copiar Permanente TXT</span>
           </button>
           <button
             type="button"
@@ -111,7 +138,7 @@ export const MemoriaView: React.FC<MemoriaViewProps> = ({
                 fecha: new Date().toISOString(),
               })
             }
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[40px] text-xs font-semibold whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[38px] text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
             <span>Nueva memoria</span>

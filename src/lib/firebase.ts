@@ -10,6 +10,12 @@ import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 export const SCOPES = [
+  'https://www.googleapis.com/auth/classroom.announcements',
+  'https://www.googleapis.com/auth/classroom.courses.readonly',
+  'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
+  'https://www.googleapis.com/auth/classroom.coursework.students.readonly',
+  'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly',
+  'https://www.googleapis.com/auth/classroom.topics.readonly',
   'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/documents.readonly',
   'https://www.googleapis.com/auth/drive',

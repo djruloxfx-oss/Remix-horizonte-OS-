@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import {
   Bookmark,
   BookmarkCheck,
+  BookOpen,
   Cloud,
   CloudDownload,
   CloudUpload,
@@ -10,27 +11,39 @@ import {
   FileSpreadsheet,
   FileText,
   FolderOpen,
+  GraduationCap,
   LogOut,
+  Megaphone,
   Plus,
   Presentation,
   RefreshCw,
   Search,
+  Send,
   Table2,
   Trash2,
   Upload,
 } from 'lucide-react';
 import type {
   HorizonteState,
+  Mission,
   TaskItem,
   WorkspaceBookmark,
 } from '../types/horizonte';
-import { exportHorizonteJson, exportHorizonteTxt } from '../utils/txtParser';
+import {
+  downloadTextFile,
+  exportHorizonteJson,
+  exportHorizonteTxt,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { Modal } from '../components/Modal';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
 import {
   addSlideWithText,
   appendGoogleDocText,
   appendSheetRows,
+  createClassroomAnnouncement,
   createDriveTextFile,
   createGoogleDoc,
   createGooglePresentation,
@@ -40,6 +53,11 @@ import {
   getGoogleDoc,
   getGooglePresentation,
   getSpreadsheetMeta,
+  listClassroomAnnouncements,
+  listClassroomCourses,
+  listClassroomCourseWork,
+  listClassroomMaterials,
+  listClassroomTopics,
   listDriveFiles,
   listGoogleDocs,
   listGooglePresentations,
@@ -49,6 +67,12 @@ import {
   updateDriveTextFile,
   updateSheetValues,
   WorkspaceAuthError,
+  type ClassroomAnnouncement,
+  type ClassroomCourse,
+  type ClassroomCourseWork,
+  type ClassroomDate,
+  type ClassroomMaterialItem,
+  type ClassroomTopic,
   type DriveFileItem,
   type GoogleDocSummary,
   type GooglePresentationSummary,
@@ -79,11 +103,12 @@ interface WorkspaceViewProps {
   onImportData: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
   onApplyCloudState: (incoming: Partial<HorizonteState>) => void;
   onAddTasksFromSheet: (tasks: Omit<TaskItem, 'id' | 'createdAt'>[]) => void;
+  onAddMissionFromWorkspace: (mission: Omit<Mission, 'id' | 'actualizada'>) => void;
   onAddMemoryFromDoc: (title: string, content: string) => void;
   onNotify: (msg: string, kind?: 'ok' | 'info' | 'warn') => void;
 }
 
-type WorkspaceSubTab = 'drive' | 'sheets' | 'docs' | 'slides';
+type WorkspaceSubTab = 'drive' | 'sheets' | 'docs' | 'slides' | 'classroom';
 
 type ConfirmAction =
   | {
@@ -124,10 +149,22 @@ type ConfirmAction =
       bodyText: string;
     }
   | {
+      kind: 'create_classroom_announcement';
+      course: ClassroomCourse;
+      text: string;
+    }
+  | {
       kind: 'restore_cloud_snapshot';
       updatedAt: string | null;
       incoming: Partial<HorizonteState>;
     };
+
+function formatClassroomDueDate(dueDate?: ClassroomDate): string {
+  if (!dueDate?.year || !dueDate?.month || !dueDate?.day) return '';
+  const dd = String(dueDate.day).padStart(2, '0');
+  const mm = String(dueDate.month).padStart(2, '0');
+  return `${dd}/${mm}/${dueDate.year}`;
+}
 
 function formatFileSize(bytesStr?: string): string {
   if (!bytesStr) return '—';
@@ -160,6 +197,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   onImportData,
   onApplyCloudState,
   onAddTasksFromSheet,
+  onAddMissionFromWorkspace,
   onAddMemoryFromDoc,
   onNotify,
 }) => {
@@ -206,6 +244,17 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const [slideTitleInput, setSlideTitleInput] = useState('');
   const [slideBodyInput, setSlideBodyInput] = useState('');
   const [slideSourceMissionId, setSlideSourceMissionId] = useState('');
+
+  // Classroom state
+  const [courses, setCourses] = useState<ClassroomCourse[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [courseWork, setCourseWork] = useState<ClassroomCourseWork[]>([]);
+  const [courseMaterials, setCourseMaterials] = useState<ClassroomMaterialItem[]>([]);
+  const [courseTopics, setCourseTopics] = useState<ClassroomTopic[]>([]);
+  const [courseAnnouncements, setCourseAnnouncements] = useState<ClassroomAnnouncement[]>([]);
+  const [classroomLoading, setClassroomLoading] = useState(false);
+  const [classroomTab, setClassroomTab] = useState<'tareas' | 'materiales' | 'anuncios'>('tareas');
+  const [announcementDraft, setAnnouncementDraft] = useState('');
 
   // Cloud & Firestore state
   const [bookmarks, setBookmarks] = useState<WorkspaceBookmark[]>([]);
@@ -336,12 +385,60 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     }
   }, [accessToken, handleWorkspaceError, selectedPresentationId]);
 
+  // Load Classroom courses
+  const loadClassroomCourses = useCallback(async () => {
+    if (!accessToken) return;
+    setClassroomLoading(true);
+    try {
+      const list = await listClassroomCourses(accessToken);
+      setCourses(list);
+      if (list.length > 0 && !selectedCourseId) {
+        setSelectedCourseId(list[0].id);
+      }
+    } catch (err) {
+      handleWorkspaceError(
+        err,
+        'No se pudieron cargar tus cursos de Google Classroom.'
+      );
+    } finally {
+      setClassroomLoading(false);
+    }
+  }, [accessToken, handleWorkspaceError, selectedCourseId]);
+
+  const loadSelectedCourseDetails = useCallback(
+    async (courseId: string) => {
+      if (!accessToken || !courseId) return;
+      setClassroomLoading(true);
+      try {
+        const [work, materials, topics, announcements] = await Promise.all([
+          listClassroomCourseWork(accessToken, courseId).catch(() => []),
+          listClassroomMaterials(accessToken, courseId).catch(() => []),
+          listClassroomTopics(accessToken, courseId).catch(() => []),
+          listClassroomAnnouncements(accessToken, courseId).catch(() => []),
+        ]);
+        setCourseWork(work);
+        setCourseMaterials(materials);
+        setCourseTopics(topics);
+        setCourseAnnouncements(announcements);
+      } catch (err) {
+        handleWorkspaceError(
+          err,
+          'No se pudo cargar el contenido del curso en Google Classroom.'
+        );
+      } finally {
+        setClassroomLoading(false);
+      }
+    },
+    [accessToken, handleWorkspaceError]
+  );
+
   useEffect(() => {
     if (accessToken && !needsAuth) {
       loadDrive();
       loadSheetsList();
       loadDocsList();
       loadPresentationsList();
+      loadClassroomCourses();
     }
   }, [
     accessToken,
@@ -350,7 +447,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     loadSheetsList,
     loadDocsList,
     loadPresentationsList,
+    loadClassroomCourses,
   ]);
+
+  useEffect(() => {
+    if (accessToken && selectedCourseId) {
+      loadSelectedCourseDetails(selectedCourseId);
+    }
+  }, [accessToken, selectedCourseId, loadSelectedCourseDetails]);
 
   const loadSelectedSpreadsheetMeta = useCallback(
     async (spreadsheetId: string) => {
@@ -822,6 +926,16 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
           confirmAction.presentation.presentationId
         );
         setConfirmAction(null);
+      } else if (confirmAction.kind === 'create_classroom_announcement') {
+        await createClassroomAnnouncement(
+          accessToken,
+          confirmAction.course.id,
+          confirmAction.text
+        );
+        setAnnouncementDraft('');
+        onNotify(`Anuncio publicado en "${confirmAction.course.name}".`);
+        await loadSelectedCourseDetails(confirmAction.course.id);
+        setConfirmAction(null);
       }
     } catch (err) {
       handleWorkspaceError(err, 'No se pudo completar la operación.');
@@ -829,6 +943,19 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
       setMutating(false);
     }
   };
+
+  const selectedCourse = useMemo(
+    () => courses.find((c) => c.id === selectedCourseId) || null,
+    [courses, selectedCourseId]
+  );
+
+  const topicMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of courseTopics) {
+      map.set(t.topicId, t.name);
+    }
+    return map;
+  }, [courseTopics]);
 
   const bookmarkedIds = useMemo(
     () => new Set(bookmarks.map((b) => b.externalId)),
@@ -862,7 +989,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
             </p>
           ) : (
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Inicia sesión con tu cuenta de Google para trabajar con Drive, Docs, Sheets y Slides y mantener tus misiones sincronizadas.
+              Inicia sesión con tu cuenta de Google para trabajar con Drive, Docs, Sheets, Slides y Classroom y mantener tus misiones sincronizadas.
             </p>
           )}
         </div>
@@ -1020,12 +1147,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
               {user
                 ? 'Autoriza acceso temporal a Google Workspace'
-                : 'Conecta Drive, Docs, Sheets y Slides'}
+                : 'Conecta Drive, Docs, Sheets, Slides y Classroom'}
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               {user
                 ? 'Por seguridad, el token de acceso a Google Workspace se mantiene únicamente en memoria durante esta sesión. Pulsa el botón para reanudar la conexión.'
-                : 'Explora archivos en Drive, lee y edita documentos de Google Docs, gestiona hojas de Google Sheets y genera diapositivas en Google Slides.'}
+                : 'Explora archivos en Drive, lee y edita documentos de Google Docs, gestiona Google Sheets, genera diapositivas en Slides e importa tareas y materiales de Google Classroom.'}
             </p>
           </div>
           <div className="flex justify-center pt-1">
@@ -1088,6 +1215,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
               >
                 <Presentation className="w-4 h-4" aria-hidden="true" />
                 <span>Slides</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubTab('classroom')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors ${
+                  subTab === 'classroom'
+                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" aria-hidden="true" />
+                <span>Classroom</span>
               </button>
             </div>
 
@@ -1175,6 +1314,59 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
                   <span>Crear Presentación</span>
                 </button>
               </div>
+            )}
+
+            {subTab === 'classroom' && selectedCourse && (
+              <ModuleExportImportBar
+                label={`Classroom (${selectedCourse.name})`}
+                onExportJson={() =>
+                  downloadTextFile(
+                    exportSectionJson('classroom', {
+                      course: selectedCourse,
+                      topics: courseTopics,
+                      courseWork,
+                      courseMaterials,
+                      announcements: courseAnnouncements,
+                      tareas: courseWork.map((w) => ({
+                        id: w.id,
+                        titulo: `[${selectedCourse.name}] ${w.title}`,
+                        quadrant: 'hacer',
+                        done: false,
+                        energyCost: 'medio',
+                        createdAt: w.updateTime || new Date().toISOString(),
+                      })),
+                    }),
+                    `classroom-${selectedCourse.id}.json`,
+                    'application/json'
+                  )
+                }
+                onExportTxt={() =>
+                  downloadTextFile(
+                    exportPartialTxt({
+                      title: `Classroom ${selectedCourse.name}`,
+                      tareas: courseWork.map((w) => ({
+                        id: w.id,
+                        titulo: `[${selectedCourse.name}] ${w.title}`,
+                        quadrant: 'hacer',
+                        done: false,
+                        energyCost: 'medio',
+                        createdAt: w.updateTime || new Date().toISOString(),
+                      })),
+                      memoria: courseMaterials.map((m) => ({
+                        id: m.id,
+                        titulo: m.title,
+                        contenido: m.description || m.alternateLink || m.title,
+                        tipo: 'Proyecto',
+                        confianza: 'Alta',
+                        proyecto: selectedCourse.name,
+                        fecha: m.updateTime || new Date().toISOString(),
+                      })),
+                    }),
+                    `classroom_${selectedCourse.id}.txt`
+                  )
+                }
+                onImportFile={onImportData}
+              />
             )}
           </div>
 
@@ -2054,6 +2246,436 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
               )}
             </section>
           )}
+
+          {/* GOOGLE CLASSROOM PANEL */}
+          {subTab === 'classroom' && (
+            <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                    Curso:
+                  </label>
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs min-w-[220px] max-w-md"
+                  >
+                    {courses.length === 0 && (
+                      <option value="">Sin cursos disponibles en Classroom</option>
+                    )}
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                        {c.section ? ` (${c.section})` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      loadClassroomCourses();
+                      if (selectedCourseId) {
+                        loadSelectedCourseDetails(selectedCourseId);
+                      }
+                    }}
+                    disabled={classroomLoading}
+                    aria-label="Actualizar cursos de Classroom"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${
+                        classroomLoading ? 'animate-spin' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {selectedCourse?.alternateLink && (
+                    <a
+                      href={selectedCourse.alternateLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Abrir en Classroom</span>
+                    </a>
+                  )}
+                </div>
+
+                {selectedCourse && (
+                  <div className="flex items-center gap-2 text-xs">
+                    {selectedCourse.courseState && (
+                      <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                        {selectedCourse.courseState}
+                      </span>
+                    )}
+                    <span className="text-slate-500 dark:text-slate-400 tabular-nums">
+                      {courseWork.length} tareas · {courseMaterials.length} materiales
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {!selectedCourse ? (
+                <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                  {classroomLoading
+                    ? 'Cargando cursos de Google Classroom...'
+                    : 'No se encontraron cursos activos en tu cuenta de Google Classroom.'}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Inner Classroom tabs */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setClassroomTab('tareas')}
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          classroomTab === 'tareas'
+                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        Tareas ({courseWork.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClassroomTab('materiales')}
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          classroomTab === 'materiales'
+                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        Materiales ({courseMaterials.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClassroomTab('anuncios')}
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          classroomTab === 'anuncios'
+                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        Anuncios ({courseAnnouncements.length})
+                      </button>
+                    </div>
+
+                    {classroomTab === 'tareas' && courseWork.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const freshTasks = courseWork.map((w) => ({
+                            titulo: `[${selectedCourse.name}] ${w.title}`,
+                            quadrant: 'hacer' as const,
+                            done: false,
+                            energyCost: 'medio' as const,
+                          }));
+                          onAddTasksFromSheet(freshTasks);
+                          onNotify(
+                            `${freshTasks.length} tareas de Classroom importadas a tu Matriz.`
+                          );
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 text-xs font-semibold"
+                      >
+                        <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Importar todas a Tareas</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tareas del curso */}
+                  {classroomTab === 'tareas' && (
+                    <div className="space-y-2.5">
+                      {courseWork.length === 0 ? (
+                        <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                          No hay tareas publicadas en este curso.
+                        </p>
+                      ) : (
+                        courseWork.map((work) => {
+                          const dueStr = formatClassroomDueDate(work.dueDate);
+                          const topicName = work.topicId
+                            ? topicMap.get(work.topicId)
+                            : undefined;
+                          return (
+                            <div
+                              key={work.id}
+                              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                            >
+                              <div className="space-y-1 min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {work.title}
+                                  </span>
+                                  {topicName && (
+                                    <span className="rounded bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                                      {topicName}
+                                    </span>
+                                  )}
+                                  {dueStr && (
+                                    <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                      Entrega: {dueStr}
+                                    </span>
+                                  )}
+                                  {typeof work.maxPoints === 'number' && (
+                                    <span className="text-[11px] text-slate-500 tabular-nums">
+                                      {work.maxPoints} pts
+                                    </span>
+                                  )}
+                                </div>
+                                {work.description && (
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-line line-clamp-3">
+                                    {work.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onAddTasksFromSheet([
+                                      {
+                                        titulo: `[${selectedCourse.name}] ${work.title}${
+                                          dueStr ? ` (${dueStr})` : ''
+                                        }`,
+                                        quadrant: 'hacer',
+                                        done: false,
+                                        energyCost: 'medio',
+                                      },
+                                    ]);
+                                    onNotify(
+                                      `Tarea "${work.title}" añadida a Horizonte OS.`
+                                    );
+                                  }}
+                                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                  Importar Tarea
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onAddMissionFromWorkspace({
+                                      titulo: work.title,
+                                      categoria: `Classroom · ${selectedCourse.name}`,
+                                      objetivo:
+                                        work.description ||
+                                        `Completar actividad "${work.title}" del curso ${selectedCourse.name}`,
+                                      contexto: topicName
+                                        ? `Tema: ${topicName}${
+                                            dueStr ? ` · Entrega: ${dueStr}` : ''
+                                          }`
+                                        : dueStr
+                                          ? `Entrega: ${dueStr}`
+                                          : '',
+                                      restricciones:
+                                        typeof work.maxPoints === 'number'
+                                          ? `Puntuación máxima: ${work.maxPoints}`
+                                          : '',
+                                      criterios: 'Entregado y verificado en Google Classroom',
+                                      prioridad: 'Importante',
+                                      estado: 'Nueva',
+                                      planA:
+                                        'Revisar enunciado, estructurar entregable y validar requisitos.',
+                                      planB: '',
+                                      riesgo: '',
+                                      siguiente: `Abrir actividad "${work.title}"`,
+                                    });
+                                    onNotify(
+                                      `Misión creada desde Classroom: "${work.title}".`
+                                    );
+                                  }}
+                                  className="rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1.5 text-xs font-semibold"
+                                >
+                                  Crear Misión
+                                </button>
+                                {work.alternateLink && (
+                                  <a
+                                    href={work.alternateLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Abrir ${work.title} en Classroom`}
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {/* Materiales del curso */}
+                  {classroomTab === 'materiales' && (
+                    <div className="space-y-2.5">
+                      {courseMaterials.length === 0 ? (
+                        <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                          No hay materiales compartidos en este curso.
+                        </p>
+                      ) : (
+                        courseMaterials.map((mat) => {
+                          const topicName = mat.topicId
+                            ? topicMap.get(mat.topicId)
+                            : undefined;
+                          return (
+                            <div
+                              key={mat.id}
+                              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                            >
+                              <div className="space-y-1 min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <BookOpen
+                                    className="w-4 h-4 text-sky-600 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {mat.title}
+                                  </span>
+                                  {topicName && (
+                                    <span className="rounded bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                                      {topicName}
+                                    </span>
+                                  )}
+                                </div>
+                                {mat.description && (
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+                                    {mat.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const body = [
+                                      `Curso: ${selectedCourse.name}`,
+                                      topicName ? `Tema: ${topicName}` : '',
+                                      mat.description || '',
+                                      mat.alternateLink ? `Enlace: ${mat.alternateLink}` : '',
+                                    ]
+                                      .filter(Boolean)
+                                      .join('\n');
+                                    onAddMemoryFromDoc(
+                                      `Classroom · ${mat.title}`,
+                                      body
+                                    );
+                                    onNotify(
+                                      `Material "${mat.title}" guardado en Memoria.`
+                                    );
+                                  }}
+                                  className="rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 text-xs font-semibold hover:opacity-90"
+                                >
+                                  Guardar en Memoria
+                                </button>
+                                {mat.alternateLink && (
+                                  <a
+                                    href={mat.alternateLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {/* Anuncios del curso */}
+                  {classroomTab === 'anuncios' && (
+                    <div className="space-y-4">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!announcementDraft.trim()) {
+                            onNotify(
+                              'Escribe el texto del anuncio antes de publicar.',
+                              'warn'
+                            );
+                            return;
+                          }
+                          setConfirmAction({
+                            kind: 'create_classroom_announcement',
+                            course: selectedCourse,
+                            text: announcementDraft.trim(),
+                          });
+                        }}
+                        className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-3"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          <Megaphone className="w-4 h-4 text-sky-600" aria-hidden="true" />
+                          <span>Publicar anuncio en &ldquo;{selectedCourse.name}&rdquo;</span>
+                        </div>
+                        <textarea
+                          rows={3}
+                          value={announcementDraft}
+                          onChange={(e) => setAnnouncementDraft(e.target.value)}
+                          placeholder="Escribe un aviso o recordatorio para la clase..."
+                          className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 text-xs font-semibold"
+                          >
+                            <Send className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Publicar anuncio</span>
+                          </button>
+                        </div>
+                      </form>
+
+                      <div className="space-y-2.5">
+                        {courseAnnouncements.length === 0 ? (
+                          <p className="py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                            No hay anuncios recientes en este curso.
+                          </p>
+                        ) : (
+                          courseAnnouncements.map((ann) => (
+                            <div
+                              key={ann.id}
+                              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-1.5"
+                            >
+                              <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                <span>
+                                  {ann.updateTime
+                                    ? new Date(ann.updateTime).toLocaleString('es-ES')
+                                    : 'Anuncio publicado'}
+                                </span>
+                                {ann.alternateLink && (
+                                  <a
+                                    href={ann.alternateLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-slate-200"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    <span>Ver</span>
+                                  </a>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                                {ann.text}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
         </div>
       )}
 
@@ -2237,6 +2859,24 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
                   </span>
                   .
                 </p>
+              </div>
+            )}
+
+            {confirmAction.kind === 'create_classroom_announcement' && (
+              <div className="space-y-2 text-xs text-slate-700 dark:text-slate-300">
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  ¿Publicar este anuncio en Google Classroom?
+                </p>
+                <p>
+                  Se publicará en el tablón de{' '}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {confirmAction.course.name}
+                  </span>
+                  :
+                </p>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-[11px] max-h-32 overflow-y-auto whitespace-pre-wrap">
+                  {confirmAction.text}
+                </div>
               </div>
             )}
 

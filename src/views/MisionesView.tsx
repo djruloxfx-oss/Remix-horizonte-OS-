@@ -16,6 +16,12 @@ import type {
   TaskItem,
 } from '../types/horizonte';
 import { Modal } from '../components/Modal';
+import { ModuleExportImportBar } from '../components/ModuleExportImportBar';
+import {
+  downloadTextFile,
+  exportPartialTxt,
+  exportSectionJson,
+} from '../utils/txtParser';
 
 interface MisionesViewProps {
   missions: Mission[];
@@ -26,6 +32,8 @@ interface MisionesViewProps {
   onToggleTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onClearDoneTasks: () => void;
+  onImportData: (rawText: string, fileName: string, mode: 'merge' | 'replace') => void;
+  onNotify: (msg: string, kind?: 'ok' | 'warn' | 'info') => void;
   triggerNewMissionModal?: boolean;
   onConsumeNewMissionModal?: () => void;
 }
@@ -75,6 +83,8 @@ export const MisionesView: React.FC<MisionesViewProps> = ({
   onToggleTask,
   onDeleteTask,
   onClearDoneTasks,
+  onImportData,
+  onNotify,
   triggerNewMissionModal,
   onConsumeNewMissionModal,
 }) => {
@@ -193,14 +203,52 @@ export const MisionesView: React.FC<MisionesViewProps> = ({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => openMissionEditor()}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 min-h-[42px] text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Nueva misión</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ModuleExportImportBar
+            label={subtab === 'misiones' ? 'Misiones' : 'Matriz de Tareas'}
+            onExportJson={() => {
+              if (subtab === 'misiones') {
+                downloadTextFile(
+                  exportSectionJson('misiones', { misiones: missions }),
+                  'horizonte-misiones.json',
+                  'application/json'
+                );
+                onNotify(`${missions.length} misiones exportadas en JSON.`);
+              } else {
+                downloadTextFile(
+                  exportSectionJson('tareas', { tareas: tasks }),
+                  'horizonte-tareas.json',
+                  'application/json'
+                );
+                onNotify(`${tasks.length} tareas exportadas en JSON.`);
+              }
+            }}
+            onExportTxt={() => {
+              if (subtab === 'misiones') {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Misiones', misiones: missions }),
+                  'horizonte_misiones_txt1.txt'
+                );
+                onNotify(`${missions.length} misiones exportadas en TXT-1.`);
+              } else {
+                downloadTextFile(
+                  exportPartialTxt({ title: 'Tareas', tareas: tasks }),
+                  'horizonte_tareas_txt1.txt'
+                );
+                onNotify(`${tasks.length} tareas exportadas en TXT-1.`);
+              }
+            }}
+            onImportFile={onImportData}
+          />
+          <button
+            type="button"
+            onClick={() => openMissionEditor()}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[38px] text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span>Nueva misión</span>
+          </button>
+        </div>
       </div>
 
       {subtab === 'misiones' ? (
