@@ -9,6 +9,7 @@ import {
   Moon,
   Volume2,
   VolumeX,
+  Cloud,
 } from 'lucide-react';
 import type { HorizonteState, SuperAgentMode } from '../types/horizonte';
 import { runDryRunDiagnostic } from '../utils/txtParser';
@@ -22,6 +23,7 @@ interface AjustesViewProps {
   onExportJson: () => void;
   onExportTxt: () => void;
   onImportFile: (text: string, fileName: string, mode: 'merge' | 'replace') => void;
+  onOpenWorkspace: () => void;
   onResetDefaults: () => void;
 }
 
@@ -33,6 +35,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   onExportJson,
   onExportTxt,
   onImportFile,
+  onOpenWorkspace,
   onResetDefaults,
 }) => {
   const [nombre, setNombre] = useState(state.perfil.nombre);
@@ -214,6 +217,15 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
               <span>Exportar backup TXT-1</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={onOpenWorkspace}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50/60 dark:bg-sky-950/30 hover:bg-sky-100/70 dark:hover:bg-sky-950/50 text-sky-700 dark:text-sky-300 px-4 py-2.5 min-h-[40px] text-xs font-semibold transition-colors"
+          >
+            <Cloud className="w-4 h-4" aria-hidden="true" />
+            <span>Abrir Google Drive, Sheets y copia en la nube</span>
+          </button>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between gap-2">

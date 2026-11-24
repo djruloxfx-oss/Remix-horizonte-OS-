@@ -189,11 +189,23 @@ export interface HorizonteState {
   aladinChecklist: AladinStep[];
 }
 
+export interface WorkspaceBookmark {
+  id: number;
+  kind: 'drive_file' | 'sheet';
+  externalId: string;
+  name: string;
+  mimeType?: string | null;
+  webViewLink?: string | null;
+  lastSyncedAt: string;
+}
+
 export type AppTab =
   | 'inicio'
   | 'misiones'
   | 'biblioteca'
   | 'agentes'
   | 'memoria'
+  | 'workspace'
   | 'terminal'
   | 'ajustes';
+

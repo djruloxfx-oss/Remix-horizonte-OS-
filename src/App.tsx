@@ -5,12 +5,14 @@ import {
   BookOpen,
   Bot,
   Database,
+  Cloud,
   Terminal as TerminalIcon,
   Settings,
   Plus,
   Mic,
   Maximize2,
 } from 'lucide-react';
+import type { User } from 'firebase/auth';
 import { SEED_STATE, ALADIN_CHECKLIST_DEFAULT } from './data/seedData';
 import type {
   AppTab,
@@ -40,12 +42,20 @@ import { AgentesView } from './views/AgentesView';
 import { MemoriaView } from './views/MemoriaView';
 import { TerminalView } from './views/TerminalView';
 import { AjustesView } from './views/AjustesView';
+import { WorkspaceView } from './views/WorkspaceView';
 import { FocusOverlay } from './components/FocusOverlay';
 import { VoiceDrawer } from './components/VoiceDrawer';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { ToastContainer, type ToastMessage } from './components/Toast';
 import { GlobalSearchBar } from './components/GlobalSearchBar';
+import {
+  clearWorkspaceAccessToken,
+  googleSignIn,
+  initAuth,
+  logout,
+} from './lib/firebase';
+import { syncAuthProfile } from './services/cloudSync';
 
 const STORAGE_KEY = 'horizonte_os_v19_4_unified';
 const LEGACY_V12_KEY = 'horizonte_os_v12';
@@ -133,6 +143,7 @@ const NAV_ITEMS: { id: AppTab; label: string; shortLabel: string; icon: React.Co
   { id: 'biblioteca', label: 'Biblioteca IA', shortLabel: 'Biblioteca', icon: BookOpen },
   { id: 'agentes', label: 'Agentes y Aladín', shortLabel: 'Agentes', icon: Bot },
   { id: 'memoria', label: 'Memoria', shortLabel: 'Memoria', icon: Database },
+  { id: 'workspace', label: 'Drive y Sheets', shortLabel: 'Drive', icon: Cloud },
   { id: 'terminal', label: 'Terminal CLI', shortLabel: 'CLI', icon: TerminalIcon },
   { id: 'ajustes', label: 'Ajustes y Backup', shortLabel: 'Ajustes', icon: Settings },
 ];
@@ -143,6 +154,10 @@ export default function App() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [openNewMissionFlag, setOpenNewMissionFlag] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [workspaceToken, setWorkspaceToken] = useState<string | null>(null);
+  const [needsWorkspaceAuth, setNeedsWorkspaceAuth] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [cliLogs, setCliLogs] = useState<CliLogEntry[]>([
     {
       id: 'init-1',
@@ -168,6 +183,49 @@ export default function App() {
       // Ignore quota errors
     }
   }, [state]);
+
+  // Listen to Firebase Auth state (in-memory OAuth access token only)
+  useEffect(() => {
+    const unsubscribe = initAuth(({ user, accessToken, needsAuth }) => {
+      setAuthUser(user);
+      setWorkspaceToken(accessToken);
+      setNeedsWorkspaceAuth(needsAuth);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    setIsSigningIn(true);
+    try {
+      const { user, accessToken } = await googleSignIn();
+      setAuthUser(user);
+      setWorkspaceToken(accessToken);
+      setNeedsWorkspaceAuth(false);
+      try {
+        await syncAuthProfile();
+      } catch {
+        // Profile sync is non-blocking for Workspace UI
+      }
+      notify('Cuenta de Google conectada con Drive y Sheets.');
+    } catch (err) {
+      notify(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo completar el inicio de sesión con Google.',
+        'warn'
+      );
+    } finally {
+      setIsSigningIn(false);
+    }
+  }, [notify]);
+
+  const handleGoogleLogout = useCallback(async () => {
+    await logout();
+    setAuthUser(null);
+    setWorkspaceToken(null);
+    setNeedsWorkspaceAuth(true);
+    notify('Sesión de Google cerrada.');
+  }, [notify]);
 
   // Sync dark class on <html>
   useEffect(() => {
@@ -899,6 +957,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setTab('workspace')}
+              aria-label="Abrir Google Drive y Sheets"
+              className="lg:hidden inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-2 min-h-[38px] text-xs font-medium text-slate-700 dark:text-slate-200"
+            >
+              <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+              <span>Drive</span>
+            </button>
             <PWAInstallButton compact />
             <button
               type="button"
@@ -1256,6 +1323,60 @@ export default function App() {
             />
           )}
 
+          {tab === 'workspace' && (
+            <WorkspaceView
+              state={state}
+              user={authUser}
+              accessToken={workspaceToken}
+              needsAuth={needsWorkspaceAuth}
+              isSigningIn={isSigningIn}
+              onSignIn={handleGoogleSignIn}
+              onLogout={handleGoogleLogout}
+              onTokenExpired={() => {
+                clearWorkspaceAccessToken();
+                setWorkspaceToken(null);
+                setNeedsWorkspaceAuth(true);
+              }}
+              onImportData={handleImportData}
+              onApplyCloudState={(incoming) => {
+                const mig = migrateJsonState(incoming);
+                setState((prev) => ({
+                  ...prev,
+                  ...mig,
+                  perfil: { ...prev.perfil, ...(incoming.perfil || {}) },
+                  ajustes: { ...prev.ajustes, ...(incoming.ajustes || {}) },
+                  gema: { ...prev.gema, ...(incoming.gema || {}) },
+                  pomodoro: {
+                    ...prev.pomodoro,
+                    ...(incoming.pomodoro || {}),
+                    running: false,
+                  },
+                  misiones: mig.misiones || prev.misiones,
+                  tareas: mig.tareas || prev.tareas,
+                  memoria: mig.memoria || prev.memoria,
+                  plantillas: mig.plantillas || prev.plantillas,
+                  skills: mig.skills || prev.skills,
+                  prompts: mig.prompts || prev.prompts,
+                  agentes: mig.agentes || prev.agentes,
+                  aladinChecklist: incoming.aladinChecklist || prev.aladinChecklist,
+                }));
+              }}
+              onAddTasksFromSheet={(tasksInput) => {
+                const now = new Date().toISOString();
+                const fresh: TaskItem[] = tasksInput.map((t) => ({
+                  ...t,
+                  id: crypto.randomUUID(),
+                  createdAt: now,
+                }));
+                setState((prev) => ({
+                  ...prev,
+                  tareas: [...fresh, ...prev.tareas],
+                }));
+              }}
+              onNotify={notify}
+            />
+          )}
+
           {tab === 'terminal' && (
             <TerminalView logs={cliLogs} onRunCommand={handleRunCliCommand} />
           )}
@@ -1288,6 +1409,7 @@ export default function App() {
               onExportJson={handleExportJson}
               onExportTxt={handleExportTxt}
               onImportFile={handleImportData}
+              onOpenWorkspace={() => setTab('workspace')}
               onResetDefaults={() => {
                 setState(SEED_STATE);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_STATE));
