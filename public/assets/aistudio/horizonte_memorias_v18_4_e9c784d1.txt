@@ -1,0 +1,81 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.091Z
+CONTENIDO:
+HORIZONTE OS — MEMORIA PERMANENTE
+Fecha de actualización: 18/10/2026
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+PREFERENCIAS
+- Priorizar soluciones gratuitas, locales, reversibles y sin suscripciones.
+- Evitar pagos recurrentes y pruebas con renovación automática.
+- Preferir soluciones simples antes que sistemas complejos.
+- Minimizar tiempo, esfuerzo, coste e intervención humana.
+- Mantener control humano sobre decisiones importantes.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+DECISIONES
+- Horizonte OS será una PWA personal, sin cuenta y sin integraciones externas en su MVP.
+- Los datos se guardarán localmente en el dispositivo.
+- Se usará exportación/importación manual como copia de seguridad.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+REGLAS DE MEMORIA
+- No inventar recuerdos.
+- Distinguir entre memoria del chat y memoria persistente.
+- Si algo no está en este archivo, tratarlo como no conocido.
+- Actualizar este archivo solo cuando el usuario lo indique o lo autorice.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+RELACIÓN CON EL CORE OPERATIVO
+- El Core Operativo define cómo debo actuar.
+- Este TXT define qué debo saber sobre el usuario y sus proyectos.
+- Si el Core y este TXT coinciden, se aplican ambos.
+- Si este TXT no recoge una preferencia, puede usar el Core, pero no debe presentarla como preferencia personal confirmada.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+JERARQUÍA DE MEMORIA
+1. Este archivo TXT es la fuente principal.
+2. La memoria interna de ChatGPT es contexto auxiliar.
+3. Si hay conflicto, prevalece este archivo.
+4. No usar información de memoria interna como si estuviera confirmada en este archivo.
+5. Marcar como HIPÓTESIS cualquier preferencia que no esté escrita aquí.
+
+=== MEMORIA ===
+TITULO: Proyecto: horizonte
+TIPO: Proyecto
+PROYECTO: horizonte
+FECHA: 2026-10-29T04:08:16.176Z
+CONTENIDO:
+Resultado: —
+Requisitos: —
+Restricciones: —
+Pasos: —
+Éxito: —
+Agentes: —
+Estado: Activa

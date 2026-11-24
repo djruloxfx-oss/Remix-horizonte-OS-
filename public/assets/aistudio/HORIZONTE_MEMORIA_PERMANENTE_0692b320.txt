@@ -1,0 +1,42 @@
+HORIZONTE OS — MEMORIA PERMANENTE
+Fecha de actualización: 19/10/2026
+
+PREFERENCIAS
+- Priorizar soluciones gratuitas, locales, reversibles y sin suscripciones.
+- Evitar pagos recurrentes y pruebas con renovación automática.
+- Preferir soluciones simples antes que sistemas complejos.
+- Minimizar tiempo, esfuerzo, coste e intervención humana.
+- Mantener control humano sobre decisiones importantes.
+
+DECISIONES
+- Horizonte OS será una PWA personal, sin cuenta y sin integraciones externas en su MVP.
+- Los datos se guardarán localmente en el dispositivo.
+- Se usará exportación/importación manual como copia de seguridad.
+
+ESTADO
+- Core Operativo v3.0 activado como instrucciones de comportamiento (contexto de ejecución, no preferencia personal confirmada).
+- El usuario autorizó esta actualización el 19/10/2026.
+
+REGLAS DE MEMORIA
+- No inventar recuerdos.
+- Distinguir entre memoria del chat y memoria persistente.
+- Si algo no está en este archivo, tratarlo como no conocido.
+- Actualizar este archivo solo cuando el usuario lo indique o lo autorice.
+
+RELACIÓN CON EL CORE OPERATIVO
+- El Core Operativo define cómo debo actuar.
+- Este TXT define qué debo saber sobre el usuario y sus proyectos.
+- Si el Core y este TXT coinciden, se aplican ambos.
+- Si este TXT no recoge una preferencia, puede usar el Core, pero no debe presentarla como preferencia personal confirmada.
+
+JERARQUÍA DE MEMORIA
+1. Este archivo TXT es la fuente principal.
+2. La memoria interna de ChatGPT es contexto auxiliar.
+3. Si hay conflicto, prevalece este archivo.
+4. No usar información de memoria interna como si estuviera confirmada en este archivo.
+5. Marcar como HIPÓTESIS cualquier preferencia que no esté escrita aquí.
+
+PENDIENTE DE DEFINIR
+- Datos del proyecto Horizonte OS (la plantilla HORIZONTE_MEMORIA_PROYECTO.txt sigue sin rellenar).
+- Datos personales del usuario (nombre, contexto de uso, dispositivos, plazos).
+- Preferencias de idioma y formato de respuesta.

@@ -1,0 +1,542 @@
+=== COPIA HORIZONTE OS ===
+VERSION: 18.6
+FORMATO: TXT-1
+
+=== PERFIL ===
+NOMBRE: Horizonte v18.6
+OBJETIVO: Copia seguridad
+
+=== AJUSTES ===
+MEMORIA AUTOMATICA: si
+ALARMA: si
+
+=== MISION ===
+TITULO: Buscar agentes IA
+RESULTADO: 3 opciones
+PRIORIDAD: Alta
+ESTADO: Activa
+CRITERIO DE EXITO: Herramienta probada
+PROXIMA ACCION: Definir tarea
+PASOS:
+Definir; buscar; comparar; probar.
+
+=== MISION ===
+TITULO: horizonte
+PRIORIDAD: Media
+ESTADO: Activa
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.091Z
+CONTENIDO:
+HORIZONTE OS — MEMORIA PERMANENTE
+Fecha de actualización: 18/10/2026
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+PREFERENCIAS
+- Priorizar soluciones gratuitas, locales, reversibles y sin suscripciones.
+- Evitar pagos recurrentes y pruebas con renovación automática.
+- Preferir soluciones simples antes que sistemas complejos.
+- Minimizar tiempo, esfuerzo, coste e intervención humana.
+- Mantener control humano sobre decisiones importantes.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+DECISIONES
+- Horizonte OS será una PWA personal, sin cuenta y sin integraciones externas en su MVP.
+- Los datos se guardarán localmente en el dispositivo.
+- Se usará exportación/importación manual como copia de seguridad.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+REGLAS DE MEMORIA
+- No inventar recuerdos.
+- Distinguir entre memoria del chat y memoria persistente.
+- Si algo no está en este archivo, tratarlo como no conocido.
+- Actualizar este archivo solo cuando el usuario lo indique o lo autorice.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+RELACIÓN CON EL CORE OPERATIVO
+- El Core Operativo define cómo debo actuar.
+- Este TXT define qué debo saber sobre el usuario y sus proyectos.
+- Si el Core y este TXT coinciden, se aplican ambos.
+- Si este TXT no recoge una preferencia, puede usar el Core, pero no debe presentarla como preferencia personal confirmada.
+
+=== MEMORIA ===
+TITULO: HORIZONTE_MEMORIA_PERMANENTE_COPIAR_PEGAR
+TIPO: Dato
+FECHA: 2026-10-31T02:24:18.093Z
+CONTENIDO:
+JERARQUÍA DE MEMORIA
+1. Este archivo TXT es la fuente principal.
+2. La memoria interna de ChatGPT es contexto auxiliar.
+3. Si hay conflicto, prevalece este archivo.
+4. No usar información de memoria interna como si estuviera confirmada en este archivo.
+5. Marcar como HIPÓTESIS cualquier preferencia que no esté escrita aquí.
+
+=== MEMORIA ===
+TITULO: Proyecto: horizonte
+TIPO: Proyecto
+PROYECTO: horizonte
+FECHA: 2026-10-29T04:08:16.176Z
+CONTENIDO:
+Resultado: —
+Requisitos: —
+Restricciones: —
+Pasos: —
+Éxito: —
+Agentes: —
+Estado: Activa
+
+=== PROMPT ===
+TITULO: Revisar y Mejorar Ensayos Académicos
+CONTENIDO:
+Analiza, corrige y eleva la calidad de tus ensayos académicos optimizando gramática, coherencia, argumentación y estilo formal según el nivel educativo.
+El objetivo de este prompt es elevar la calidad y solidez de los ensayos académicos mediante una revisión integral que optimiza gramática, estilo y coherencia argumentativa.
+Está especialmente recomendado para quienes trabajan en el ámbito de educacion y necesitan analiza, corrige y eleva la calidad de tus ensayos académicos optimizando gramática, coherencia, argumentación y estilo formal según el nivel educativo. Su estructura clara permite obtener resultados consistentes sin necesidad de ajustar el prompt cada vez.
+Una de las principales ventajas es que corrige errores básicos de ortografía, gramática y puntuación., lo que ahorra tiempo y mejora la calidad de los resultados. Al usar este prompt, la IA entiende exactamente qué se espera de ella y en qué formato debe responder.
+
+ ¿Qué hace el prompt?
+Corrige errores básicos de ortografía, gramática y puntuación.
+Evalúa la claridad y coherencia general del texto.
+Sugiere ajustes simples para mejorar el estilo académico.
+ ¿Cómo usar este prompt? 
+Copia y pega el prompt en tu modelo de IA preferido.
+Completa las variables:
+[ENSAYO] Pega el texto completo del ensayo.
+Ejecuta el prompt para recibir tu versión corregida y clara.
+[AREA] Ej.: 'derecho'
+[ENSAYO] Ej.: 'ensayo argumentativo sobre el impacto de las redes sociales en adolescentes'
+[NIVEL] Ej.: 'pregrado'
+
+ Tips 
+Indica el nivel académico y el área del ensayo.
+Evita incluir formato o tablas para un análisis limpio.
+Asegúrate de pegar todo el texto completo del ensayo.
+
+ ¿Para quién es?
+Está pensado para estudiantes universitarios, investigadores en formación y profesionales que necesitan presentar trabajos escritos formales. También es útil para docentes que quieren agilizar la revisión de borradores y para quienes buscan pulir su redacción académica sin depender de un corrector humano.
+
+ ¿Qué problema resuelve?
+Resolver la dificultad de detectar errores sutiles en textos largos y la falta de objetividad al revisar el propio trabajo. Muchas veces, al releer un ensayo, se pasan por alto fallos de coherencia, repeticiones o giros poco formales que restan calidad al argumento. Este prompt ayuda a identificar esos puntos ciegos y ofrece una corrección estructurada y clara.
+
+ Casos de uso prácticos
+Un estudiante de maestría en derecho que necesita ajustar el tono de su monografía final para cumplir con el rigor de una revista especializada.
+Un investigador en psicología que quiere verificar que sus hipótesis se expliquen con claridad antes de enviar un artículo a revisión por pares.
+Un alumno de pregrado en educación que debe entregar un ensayo argumentativo y nota que su redacción es confusa en varios párrafos.
+Un profesional que redacta un informe técnico y desea asegurarse de que la estructura sea lógica y la gramática impecable.
+
+ Consejos para mejores resultados
+Indica siempre el nivel académico exacto (pregrado, maestría, doctorado) y el área de conocimiento; así la IA ajusta el vocabulario y la profundidad de las correcciones.
+Pega el ensayo completo sin formato adicional (sin tablas, negritas o listas complejas) para que el análisis sea limpio y se centre en el contenido.
+Si el texto es muy extenso, divídelo en partes lógicas (introducción, desarrollo, conclusión) y ejecuta el prompt por separado para mantener la coherencia en cada sección.
+
+Prompts Relacionados en Redacción Académica
+PRO
+Resumir textos académicos y tesis de forma clara y estructurada
+Crea resúmenes claros y rigurosos de artículos o tesis, destacando objetivo, metodología, resultados y conclusiones, con posibilidad de análisis crítico y formato tipo abstract.
+PRO
+Redactar ensayos académicos coherentes
+Estructura ensayos bien organizados con tesis clara, argumentos sólidos y conclusiones fundamentadas.
+Comprender el propósito de un discurso
+Analiza el propósito central de un discurso y crea un esquema coherente, emocional y persuasivo adaptado a la audiencia y al contexto comunicativo.
+PRO
+Generar guías prácticas paso a paso
+Crea guías estructuradas, claras y accionables con pasos secuenciales, ejemplos prácticos y estructura SEO adaptada al nivel de tu público.
+Simula tu sustentación de tesis y prepárate para responder preguntas difíciles del jurado
+Entrena con preguntas exigentes, objeciones metodológicas y escenarios reales de defensa para explicar tu investigación con seguridad, claridad y argumentos sólidos frente a un jur
+¿Qué hace el prompt?
+Corrige errores básicos de ortografía, gramática y puntuación.
+Evalúa la claridad y coherencia general del texto.
+Sugiere ajustes simples para mejorar el estilo académico.
+¿Cómo usar este prompt?
+Copia y pega el prompt en tu modelo de IA preferido.
+Completa las variables:
+[ENSAYO] Pega el texto completo del ensayo.
+Ejecuta el prompt para recibir tu versión corregida y clara.
+[AREA] Ej.: 'derecho'
+[ENSAYO] Ej.: 'ensayo argumentativo sobre el impacto de las redes sociales en adolescentes'
+[NIVEL] Ej.: 'pregrado'
+Tips
+Indica el nivel académico y el área del ensayo.
+Evita incluir formato o tablas para un análisis limpio.
+Asegúrate de pegar todo el texto completo del ensayo.
+¿Para quién o para qué es?
+Está pensado para estudiantes universitarios, investigadores en formación y profesionales que necesitan presentar trabajos escritos formales. También es útil para docentes que quieren agilizar la revisión de borradores y para quienes buscan pulir su redacción académica sin depender de un corrector humano.
+¿Qué problema resuelve?
+Resolver la dificultad de detectar errores sutiles en textos largos y la falta de objetividad al revisar el propio trabajo. Muchas veces, al releer un ensayo, se pasan por alto fallos de coherencia, repeticiones o giros poco formales que restan calidad al argumento. Este prompt ayuda a identificar esos puntos ciegos y ofrece una corrección estructurada y clara.
+Casos de uso prácticos
+Un estudiante de maestría en derecho que necesita ajustar el tono de su monografía final para cumplir con el rigor de una revista especializada.
+Un investigador en psicología que quiere verificar que sus hipótesis se expliquen con claridad antes de enviar un artículo a revisión por pares.
+Un alumno de pregrado en educación que debe entregar un ensayo argumentativo y nota que su redacción es confusa en varios párrafos.
+Un profesional que redacta un informe técnico y desea asegurarse de que la estructura sea lógica y la gramática impecable.
+Consejos para mejores resultados
+Indica siempre el nivel académico exacto (pregrado, maestría, doctorado) y el área de conocimiento; así la IA ajusta el vocabulario y la profundidad de las correcciones.
+Pega el ensayo completo sin formato adicional (sin tablas, negritas o listas complejas) para que el análisis sea limpio y se centre en el contenido.
+Si el texto es muy extenso, divídelo en partes lógicas (introducción, desarrollo, conclusión) y ejecuta el prompt por separado para mantener la coherencia en cada sección.
+
+Prompts Relacionados en Redacción Académica
+PRO
+Resumir textos académicos y tesis de forma clara y estructurada
+Crea resúmenes claros y rigurosos de artículos o tesis, destacando objetivo, metodología, resultados y conclusiones, con posibilidad de análisis crítico y formato tipo abstract.
+PRO
+Redactar ensayos académicos coherentes
+Estructura ensayos bien organizados con tesis clara, argumentos sólidos y conclusiones fundamentadas.
+Comprender el propósito de un discurso
+Analiza el propósito central de un discurso y crea un esquema coherente, emocional y persuasivo adaptado a la audiencia y al contexto comunicativo.
+PRO
+Generar guías prácticas paso a paso
+Crea guías estructuradas, claras y accionables con pasos secuenciales, ejemplos prácticos y estructura SEO adaptada al nivel de tu público.
+Simula tu sustentación de tesis y prepárate para responder preguntas difíciles del jurado
+Entrena con preguntas exigentes, objeciones metodológicas y escenarios reales de defensa para explicar tu investigación con seguridad, claridad y argumentos sólidos frente a un jur
+
+=== PROMPT ===
+TITULO: horizonte-biblioteca (2)
+CONTENIDO:
+Devuelve una tabla con: coste total, tiempo, fiabilidad, simplicidad, reversibilidad, riesgos y veredicto.
+Después indica la opción recomendada, el motivo principal, el plan B y la siguiente acción.
+¿Qué hace el prompt?
+Convierte una decisión u opciones propuestas en una evaluación estructurada.
+Devuelve una tabla comparativa con siete criterios: coste total, tiempo, fiabilidad, simplicidad, reversibilidad, riesgos y veredicto.
+Obliga a cerrar el análisis con una recomendación clara.
+Identifica el motivo principal de la opción recomendada.
+Propone un plan B si la opción principal falla o no conviene.
+Define una siguiente acción concreta para pasar del análisis a la ejecución.
+Aplica un enfoque orientado a resultados, priorizando decisiones prácticas y verificables.
+¿Cómo usar este prompt?
+Copia el prompt en tu conversación con la IA.
+Describe la decisión, proyecto o situación que quieres evaluar.
+Añade las opciones disponibles, si las conoces.
+Indica restricciones relevantes: presupuesto, plazo, nivel de riesgo aceptable o recursos disponibles.
+Envía el prompt para recibir la tabla de evaluación.
+Revisa el veredicto, la opción recomendada y el plan B.
+Ejecuta la siguiente acción propuesta o pide ajustes si falta contexto.
+Tips
+Incluye cifras o rangos de coste y tiempo cuando los tengas.
+Especifica si prefieres minimizar riesgo, gasto, tiempo o complejidad.
+Menciona consecuencias irreversibles, como compras, contratos o cambios de configuración.
+Si hay muchas opciones, pide primero una preselección de las más viables.
+Usa el plan B como criterio de contingencia antes de comprometerte.
+Pide que justifique cada veredicto si necesitas auditar la recomendación.
+¿Para quién o para qué es?
+Es un prompt para personas que deben tomar decisiones con varias alternativas y quieren una evaluación rápida, ordenada y accionable. Sirve para comparar opciones de compra, herramientas, proveedores, rutas de trabajo, planes de proyecto o cambios operativos, convirtiendo un análisis difuso en una recomendación concreta con contingencia y siguiente paso.
+¿Qué problema resuelve?
+Resuelve el problema de las decisiones mal estructuradas, donde las opciones se comparan por intuición o se analizan sin criterios comunes. Al forzar una tabla con coste, tiempo, fiabilidad, simplicidad, reversibilidad y riesgos, el prompt hace visibles los compromisos de cada alternativa y evita recomendaciones vagas, asegurando que la respuesta termine en una elección, un motivo, un respaldo y una acción.
+Casos de uso prácticos
+Elegir entre dos o más proveedores, tarifas o suscripciones.
+Comparar herramientas de software para un flujo de trabajo.
+Decidir entre reparar, sustituir o alquilar un equipo.
+Evaluar opciones de viaje, alojamiento o transporte.
+Seleccionar una estrategia de marketing con distinto coste y riesgo.
+Comparar planes de implementación para un proyecto o negocio.
+Decidir si externalizar una tarea o resolverla internamente.
+Valorar cambios de proceso antes de modificar configuraciones o contratos.
+Consejos para mejores resultados
+Define el objetivo final antes de enviar el prompt.
+Indica el presupuesto máximo y la fecha límite.
+Explica qué criterio pesa más: coste, rapidez, fiabilidad o facilidad de reversión.
+Aporta datos reales de cada opción cuando estén disponibles.
+Señala riesgos inaceptables, como pérdida de datos, gastos no reembolsables o dependencia de un proveedor.
+Pide una escala o puntuación para cada criterio si quieres comparar opciones de forma más objetiva.
+Solicita una versión resumida de una línea si solo necesitas decidir con rapidez.
+
+=== PLANTILLA ===
+TITULO: Organizar la semana
+CATEGORIA: Productividad
+PRIORIDAD: Alta
+OBJETIVO: Tener una semana clara
+RESULTADO: Calendario con 3 prioridades
+CRITERIO DE EXITO: Ninguna prioridad sin acción
+PROXIMA ACCION: Revisar pendientes
+PASOS:
+Revisar; priorizar; asignar; foco.
+
+=== PLANTILLA ===
+TITULO: Resolver una gestión
+CATEGORIA: Personal
+PRIORIDAD: Alta
+OBJETIVO: Cerrar una gestión
+RESULTADO: Trámite completado
+CRITERIO DE EXITO: Confirmación o bloqueo resuelto
+PROXIMA ACCION: Identificar requisito
+PASOS:
+Requisitos; documentos; ejecutar; confirmar.
+
+=== PLANTILLA ===
+TITULO: Comparar una compra
+CATEGORIA: Decisiones
+PRIORIDAD: Media
+OBJETIVO: Elegir sin gastar de más
+RESULTADO: Tabla y recomendación
+CRITERIO DE EXITO: Decisión justificada
+PROXIMA ACCION: Definir presupuesto
+PASOS:
+Definir; comparar; decidir.
+
+=== PLANTILLA ===
+TITULO: Preparar reunión
+CATEGORIA: Comunicación
+PRIORIDAD: Media
+OBJETIVO: Salir con acuerdos
+RESULTADO: Guion y preguntas
+CRITERIO DE EXITO: Guion listo
+PROXIMA ACCION: Escribir objetivo
+PASOS:
+Objetivo; preguntas; seguimiento.
+
+=== PLANTILLA ===
+TITULO: Proyecto académico
+CATEGORIA: Estudios
+PRIORIDAD: Alta
+OBJETIVO: Entregar a tiempo
+RESULTADO: Documento y checklist
+CRITERIO DE EXITO: Entregado
+PROXIMA ACCION: Definir esquema
+PASOS:
+Pregunta; esquema; borrador; entrega.
+
+=== PLANTILLA ===
+TITULO: Rutina de salud
+CATEGORIA: Bienestar
+PRIORIDAD: Media
+OBJETIVO: Mejorar hábitos
+RESULTADO: Rutina semanal
+CRITERIO DE EXITO: 7 días aplicados
+PROXIMA ACCION: Elegir hábito
+PASOS:
+Sueño; movimiento; comida.
+
+=== PLANTILLA ===
+TITULO: Control de gastos
+CATEGORIA: Finanzas
+PRIORIDAD: Media
+OBJETIVO: Reducir fugas
+RESULTADO: Presupuesto
+CRITERIO DE EXITO: Ahorro iniciado
+PROXIMA ACCION: Registrar gastos
+PASOS:
+Registrar; categorizar; ahorrar.
+
+=== PLANTILLA ===
+TITULO: Aprender habilidad
+CATEGORIA: Aprendizaje
+PRIORIDAD: Media
+OBJETIVO: Competencia básica
+RESULTADO: Plan de 4 semanas
+CRITERIO DE EXITO: Proyecto terminado
+PROXIMA ACCION: Definir habilidad
+PASOS:
+Definir; practicar; proyecto.
+
+=== PLANTILLA ===
+TITULO: Buscar agentes IA
+CATEGORIA: IA
+PRIORIDAD: Alta
+OBJETIVO: Elegir herramienta
+RESULTADO: 3 opciones
+CRITERIO DE EXITO: Herramienta probada
+PROXIMA ACCION: Definir tarea
+PASOS:
+Definir; buscar; comparar; probar.
+
+=== PLANTILLA ===
+TITULO: Cierre diario
+CATEGORIA: Productividad
+PRIORIDAD: Alta
+OBJETIVO: Cerrar el día
+RESULTADO: Avance y próxima acción
+CRITERIO DE EXITO: Misión actualizada
+PROXIMA ACCION: Abrir misiones
+PASOS:
+Revisar; anotar; siguiente paso.
+
+=== AGENTE ===
+NOMBRE: Investigador
+CATEGORIA: Investigación
+ROL: Busca, verifica y resume información
+ESPECIALIDADES: investigación, buscar, información, fuentes, comparar, datos
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 95
+INSTRUCCIONES:
+Busca información verificable y entrega un resumen accionable.
+
+=== AGENTE ===
+NOMBRE: Verificador de hechos
+CATEGORIA: Investigación
+ROL: Comprueba información
+ESPECIALIDADES: verificar, hechos, noticias, fuentes
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 92
+INSTRUCCIONES:
+Contrasta afirmaciones con fuentes fiables.
+
+=== AGENTE ===
+NOMBRE: Resumidor
+CATEGORIA: Investigación
+ROL: Resume textos y documentos
+ESPECIALIDADES: resumir, texto, pdf, artículo
+HERRAMIENTAS: Lectura
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Resume en 5 puntos, ideas y acciones.
+
+=== AGENTE ===
+NOMBRE: Comparador de opciones
+CATEGORIA: Decisiones
+ROL: Compara alternativas
+ESPECIALIDADES: comparar, opciones, compra, precio
+HERRAMIENTAS: Tablas
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Compara 3 opciones y recomienda una.
+
+=== AGENTE ===
+NOMBRE: Planificador
+CATEGORIA: Productividad
+ROL: Convierte objetivos en planes
+ESPECIALIDADES: plan, pasos, proyecto, semana
+HERRAMIENTAS: Planificación
+COSTE: Gratuito
+FIABILIDAD: 92
+INSTRUCCIONES:
+Divide objetivos en pasos y próxima acción.
+
+=== AGENTE ===
+NOMBRE: Orquestador
+CATEGORIA: Productividad
+ROL: Coordina agentes y misiones
+ESPECIALIDADES: orquestar, agente, misión, flujo
+HERRAMIENTAS: Coordinación
+COSTE: Gratuito
+FIABILIDAD: 93
+INSTRUCCIONES:
+Selecciona agentes, define flujo y verifica.
+
+=== AGENTE ===
+NOMBRE: Redactor
+CATEGORIA: Escritura
+ROL: Escribe y mejora textos
+ESPECIALIDADES: escribir, redactar, email
+HERRAMIENTAS: Redacción
+COSTE: Gratuito
+FIABILIDAD: 88
+INSTRUCCIONES:
+Escribe claro y adaptado al destinatario.
+
+=== AGENTE ===
+NOMBRE: Traductor
+CATEGORIA: Escritura
+ROL: Traduce textos
+ESPECIALIDADES: traducir, inglés, idioma
+HERRAMIENTAS: Traducción
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Traduce manteniendo sentido y tono.
+
+=== AGENTE ===
+NOMBRE: Preparador de entrevistas
+CATEGORIA: Trabajo
+ROL: Prepara entrevistas y CV
+ESPECIALIDADES: entrevista, trabajo, cv
+HERRAMIENTAS: Análisis
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Prepara respuestas STAR y mejoras de CV.
+
+=== AGENTE ===
+NOMBRE: Buscador de empleo
+CATEGORIA: Trabajo
+ROL: Encuentra ofertas
+ESPECIALIDADES: empleo, trabajo, ofertas
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 82
+INSTRUCCIONES:
+Busca ofertas y propone acciones.
+
+=== AGENTE ===
+NOMBRE: Gestor de trámites
+CATEGORIA: Personal
+ROL: Organiza gestiones
+ESPECIALIDADES: trámite, gestión, cita, documento
+HERRAMIENTAS: Organización
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Identifica requisitos y pasos.
+
+=== AGENTE ===
+NOMBRE: Organizador de viajes
+CATEGORIA: Personal
+ROL: Planifica viajes
+ESPECIALIDADES: viaje, vuelo, hotel
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 84
+INSTRUCCIONES:
+Compara opciones y crea itinerario.
+
+=== AGENTE ===
+NOMBRE: Analista financiero
+CATEGORIA: Finanzas
+ROL: Controla gastos
+ESPECIALIDADES: gastos, dinero, presupuesto
+HERRAMIENTAS: Cálculo
+COSTE: Gratuito
+FIABILIDAD: 87
+INSTRUCCIONES:
+Clasifica gastos y propone ahorros.
+
+=== AGENTE ===
+NOMBRE: Coach de hábitos
+CATEGORIA: Salud
+ROL: Crea hábitos
+ESPECIALIDADES: hábito, salud, ejercicio, sueño
+HERRAMIENTAS: Hábitos
+COSTE: Gratuito
+FIABILIDAD: 83
+INSTRUCCIONES:
+Diseña hábito mínimo y plan semanal.
+
+=== AGENTE ===
+NOMBRE: Tutor de estudio
+CATEGORIA: Estudios
+ROL: Prepara exámenes
+ESPECIALIDADES: estudiar, examen, apuntes
+HERRAMIENTAS: Enseñanza
+COSTE: Gratuito
+FIABILIDAD: 89
+INSTRUCCIONES:
+Explica, crea preguntas y plan.
+
+=== AGENTE ===
+NOMBRE: Generador de ideas
+CATEGORIA: Creatividad
+ROL: Genera ideas
+ESPECIALIDADES: ideas, creatividad, negocio
+HERRAMIENTAS: Creatividad
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Genera ideas y recomienda 3.

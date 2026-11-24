@@ -1,0 +1,20 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== SKILL ===
+TITULO: Aladín v0.1 · Checklist de aceptación (para ti)
+IA: Ninguna: lista de comprobación del usuario
+CONTENIDO:
+Regla: no pases al siguiente paso si el anterior falla. Si algo falla, se corrige el prompt y se sube de versión (v0.2).
+
+1. IMPORTACIÓN: el TXT entra en Horizonte OS y se ven los 5 bloques completos.
+2. PRUEBA TRAMPA: la IA acierta las 4 peticiones sin inventar nada.
+3. PRUEBA DE HUMO: 1 equipo, 1 o 2 jornadas. Se ve el registro de cobertura, las fichas siguen el formato, las URLs abren y no hay datos inventados.
+4. PILOTO: 1 equipo, 1 temporada, jornadas 1-10.
+5. VERIFICADOR (otra IA): confirma al menos el 90 % de las fichas y no marca ninguna como SOSPECHOSA.
+6. COMPROBACIÓN MANUAL: tú compruebas 3 fichas al azar contra rfef.es o laliga.com. Las 3 deben coincidir.
+7. COBERTURA: el registro lista todos los partidos de las jornadas y el % revisado es el que dice la IA.
+8. Solo si pasan los 7 puntos: ampliar a más jornadas. Después, repetir con otro equipo y el mismo prompt.
+
+Criterio de decisión: el 100 % lo marcas tú, nunca la IA.

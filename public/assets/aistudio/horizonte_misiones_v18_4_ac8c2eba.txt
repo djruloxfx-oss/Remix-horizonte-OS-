@@ -1,0 +1,18 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== MISION ===
+TITULO: Buscar agentes IA
+RESULTADO: 3 opciones
+PRIORIDAD: Alta
+ESTADO: Activa
+CRITERIO DE EXITO: Herramienta probada
+PROXIMA ACCION: Definir tarea
+PASOS:
+Definir; buscar; comparar; probar.
+
+=== MISION ===
+TITULO: horizonte
+PRIORIDAD: Media
+ESTADO: Activa

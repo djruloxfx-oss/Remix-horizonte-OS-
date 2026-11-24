@@ -1,0 +1,6 @@
+{
+  "name": "Horizonte OS",
+  "description": "Sistema operativo personal local-first para misiones, matriz de tareas, agentes IA, prompts, skills, memoria permanente, GEMA y enfoque.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

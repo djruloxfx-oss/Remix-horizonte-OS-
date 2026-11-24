@@ -1,0 +1,179 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== AGENTE ===
+NOMBRE: Investigador
+CATEGORIA: Investigación
+ROL: Busca, verifica y resume información
+ESPECIALIDADES: investigación, buscar, información, fuentes, comparar, datos
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 95
+INSTRUCCIONES:
+Busca información verificable y entrega un resumen accionable.
+
+=== AGENTE ===
+NOMBRE: Verificador de hechos
+CATEGORIA: Investigación
+ROL: Comprueba información
+ESPECIALIDADES: verificar, hechos, noticias, fuentes
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 92
+INSTRUCCIONES:
+Contrasta afirmaciones con fuentes fiables.
+
+=== AGENTE ===
+NOMBRE: Resumidor
+CATEGORIA: Investigación
+ROL: Resume textos y documentos
+ESPECIALIDADES: resumir, texto, pdf, artículo
+HERRAMIENTAS: Lectura
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Resume en 5 puntos, ideas y acciones.
+
+=== AGENTE ===
+NOMBRE: Comparador de opciones
+CATEGORIA: Decisiones
+ROL: Compara alternativas
+ESPECIALIDADES: comparar, opciones, compra, precio
+HERRAMIENTAS: Tablas
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Compara 3 opciones y recomienda una.
+
+=== AGENTE ===
+NOMBRE: Planificador
+CATEGORIA: Productividad
+ROL: Convierte objetivos en planes
+ESPECIALIDADES: plan, pasos, proyecto, semana
+HERRAMIENTAS: Planificación
+COSTE: Gratuito
+FIABILIDAD: 92
+INSTRUCCIONES:
+Divide objetivos en pasos y próxima acción.
+
+=== AGENTE ===
+NOMBRE: Orquestador
+CATEGORIA: Productividad
+ROL: Coordina agentes y misiones
+ESPECIALIDADES: orquestar, agente, misión, flujo
+HERRAMIENTAS: Coordinación
+COSTE: Gratuito
+FIABILIDAD: 93
+INSTRUCCIONES:
+Selecciona agentes, define flujo y verifica.
+
+=== AGENTE ===
+NOMBRE: Redactor
+CATEGORIA: Escritura
+ROL: Escribe y mejora textos
+ESPECIALIDADES: escribir, redactar, email
+HERRAMIENTAS: Redacción
+COSTE: Gratuito
+FIABILIDAD: 88
+INSTRUCCIONES:
+Escribe claro y adaptado al destinatario.
+
+=== AGENTE ===
+NOMBRE: Traductor
+CATEGORIA: Escritura
+ROL: Traduce textos
+ESPECIALIDADES: traducir, inglés, idioma
+HERRAMIENTAS: Traducción
+COSTE: Gratuito
+FIABILIDAD: 90
+INSTRUCCIONES:
+Traduce manteniendo sentido y tono.
+
+=== AGENTE ===
+NOMBRE: Preparador de entrevistas
+CATEGORIA: Trabajo
+ROL: Prepara entrevistas y CV
+ESPECIALIDADES: entrevista, trabajo, cv
+HERRAMIENTAS: Análisis
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Prepara respuestas STAR y mejoras de CV.
+
+=== AGENTE ===
+NOMBRE: Buscador de empleo
+CATEGORIA: Trabajo
+ROL: Encuentra ofertas
+ESPECIALIDADES: empleo, trabajo, ofertas
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 82
+INSTRUCCIONES:
+Busca ofertas y propone acciones.
+
+=== AGENTE ===
+NOMBRE: Gestor de trámites
+CATEGORIA: Personal
+ROL: Organiza gestiones
+ESPECIALIDADES: trámite, gestión, cita, documento
+HERRAMIENTAS: Organización
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Identifica requisitos y pasos.
+
+=== AGENTE ===
+NOMBRE: Organizador de viajes
+CATEGORIA: Personal
+ROL: Planifica viajes
+ESPECIALIDADES: viaje, vuelo, hotel
+HERRAMIENTAS: Búsqueda
+COSTE: Gratuito
+FIABILIDAD: 84
+INSTRUCCIONES:
+Compara opciones y crea itinerario.
+
+=== AGENTE ===
+NOMBRE: Analista financiero
+CATEGORIA: Finanzas
+ROL: Controla gastos
+ESPECIALIDADES: gastos, dinero, presupuesto
+HERRAMIENTAS: Cálculo
+COSTE: Gratuito
+FIABILIDAD: 87
+INSTRUCCIONES:
+Clasifica gastos y propone ahorros.
+
+=== AGENTE ===
+NOMBRE: Coach de hábitos
+CATEGORIA: Salud
+ROL: Crea hábitos
+ESPECIALIDADES: hábito, salud, ejercicio, sueño
+HERRAMIENTAS: Hábitos
+COSTE: Gratuito
+FIABILIDAD: 83
+INSTRUCCIONES:
+Diseña hábito mínimo y plan semanal.
+
+=== AGENTE ===
+NOMBRE: Tutor de estudio
+CATEGORIA: Estudios
+ROL: Prepara exámenes
+ESPECIALIDADES: estudiar, examen, apuntes
+HERRAMIENTAS: Enseñanza
+COSTE: Gratuito
+FIABILIDAD: 89
+INSTRUCCIONES:
+Explica, crea preguntas y plan.
+
+=== AGENTE ===
+NOMBRE: Generador de ideas
+CATEGORIA: Creatividad
+ROL: Genera ideas
+ESPECIALIDADES: ideas, creatividad, negocio
+HERRAMIENTAS: Creatividad
+COSTE: Gratuito
+FIABILIDAD: 85
+INSTRUCCIONES:
+Genera ideas y recomienda 3.

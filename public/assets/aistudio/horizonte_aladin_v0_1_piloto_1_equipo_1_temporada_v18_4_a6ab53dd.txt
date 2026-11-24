@@ -1,0 +1,17 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== PROMPT ===
+TITULO: Aladín v0.1 · Piloto (1 equipo, 1 temporada)
+IA: Cualquiera con búsqueda web activada (Claude, Gemini, ChatGPT)
+CONTENIDO:
+Usa el prompt maestro "Aladín v0.1" con estos datos.
+Equipo: [EQUIPO]
+Temporada: [TEMPORADA]
+Jornadas de esta pasada: 1-10
+
+Objetivo del piloto: comprobar si el método funciona antes de ampliar. Es más importante que cada ficha sea fiable que tener muchas.
+Entrega primero el registro de cobertura (paso 1), luego las fichas (máximo 10, bien verificadas) y la lista de lo que no pudiste comprobar.
+Si no encuentras 2 fuentes para una incidencia, déjala como PARCIAL o NO VERIFICADO. No la rellenes.
+Al terminar, dime qué fuentes te resultaron más útiles y cuáles no, para decidir de dónde sacar los datos en las siguientes tandas.

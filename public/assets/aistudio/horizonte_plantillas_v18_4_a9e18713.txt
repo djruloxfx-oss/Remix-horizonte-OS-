@@ -1,0 +1,113 @@
+=== HORIZONTE OS ===
+VERSION: 18.4
+FORMATO: TXT-1
+
+=== PLANTILLA ===
+TITULO: Organizar la semana
+CATEGORIA: Productividad
+PRIORIDAD: Alta
+OBJETIVO: Tener una semana clara
+RESULTADO: Calendario con 3 prioridades
+CRITERIO DE EXITO: Ninguna prioridad sin acción
+PROXIMA ACCION: Revisar pendientes
+PASOS:
+Revisar; priorizar; asignar; foco.
+
+=== PLANTILLA ===
+TITULO: Resolver una gestión
+CATEGORIA: Personal
+PRIORIDAD: Alta
+OBJETIVO: Cerrar una gestión
+RESULTADO: Trámite completado
+CRITERIO DE EXITO: Confirmación o bloqueo resuelto
+PROXIMA ACCION: Identificar requisito
+PASOS:
+Requisitos; documentos; ejecutar; confirmar.
+
+=== PLANTILLA ===
+TITULO: Comparar una compra
+CATEGORIA: Decisiones
+PRIORIDAD: Media
+OBJETIVO: Elegir sin gastar de más
+RESULTADO: Tabla y recomendación
+CRITERIO DE EXITO: Decisión justificada
+PROXIMA ACCION: Definir presupuesto
+PASOS:
+Definir; comparar; decidir.
+
+=== PLANTILLA ===
+TITULO: Preparar reunión
+CATEGORIA: Comunicación
+PRIORIDAD: Media
+OBJETIVO: Salir con acuerdos
+RESULTADO: Guion y preguntas
+CRITERIO DE EXITO: Guion listo
+PROXIMA ACCION: Escribir objetivo
+PASOS:
+Objetivo; preguntas; seguimiento.
+
+=== PLANTILLA ===
+TITULO: Proyecto académico
+CATEGORIA: Estudios
+PRIORIDAD: Alta
+OBJETIVO: Entregar a tiempo
+RESULTADO: Documento y checklist
+CRITERIO DE EXITO: Entregado
+PROXIMA ACCION: Definir esquema
+PASOS:
+Pregunta; esquema; borrador; entrega.
+
+=== PLANTILLA ===
+TITULO: Rutina de salud
+CATEGORIA: Bienestar
+PRIORIDAD: Media
+OBJETIVO: Mejorar hábitos
+RESULTADO: Rutina semanal
+CRITERIO DE EXITO: 7 días aplicados
+PROXIMA ACCION: Elegir hábito
+PASOS:
+Sueño; movimiento; comida.
+
+=== PLANTILLA ===
+TITULO: Control de gastos
+CATEGORIA: Finanzas
+PRIORIDAD: Media
+OBJETIVO: Reducir fugas
+RESULTADO: Presupuesto
+CRITERIO DE EXITO: Ahorro iniciado
+PROXIMA ACCION: Registrar gastos
+PASOS:
+Registrar; categorizar; ahorrar.
+
+=== PLANTILLA ===
+TITULO: Aprender habilidad
+CATEGORIA: Aprendizaje
+PRIORIDAD: Media
+OBJETIVO: Competencia básica
+RESULTADO: Plan de 4 semanas
+CRITERIO DE EXITO: Proyecto terminado
+PROXIMA ACCION: Definir habilidad
+PASOS:
+Definir; practicar; proyecto.
+
+=== PLANTILLA ===
+TITULO: Buscar agentes IA
+CATEGORIA: IA
+PRIORIDAD: Alta
+OBJETIVO: Elegir herramienta
+RESULTADO: 3 opciones
+CRITERIO DE EXITO: Herramienta probada
+PROXIMA ACCION: Definir tarea
+PASOS:
+Definir; buscar; comparar; probar.
+
+=== PLANTILLA ===
+TITULO: Cierre diario
+CATEGORIA: Productividad
+PRIORIDAD: Alta
+OBJETIVO: Cerrar el día
+RESULTADO: Avance y próxima acción
+CRITERIO DE EXITO: Misión actualizada
+PROXIMA ACCION: Abrir misiones
+PASOS:
+Revisar; anotar; siguiente paso.

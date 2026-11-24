@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563eb"><title>Horizonte OS</title>
+<style>
+:root{--blue:#2563eb;--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--red:#dc2626;--green:#16a34a}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}body{background:var(--bg);color:var(--text);padding-bottom:84px}
+header{position:sticky;top:0;background:rgba(245,247,251,.95);padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:10}
+h1{font-size:18px}p{font-size:12px;color:var(--muted)}.mic{background:var(--blue);color:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:18px}
+main{padding:16px;max-width:640px;margin:auto}.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center}.kpi b{display:block;font-size:22px;color:var(--blue)}.kpi span{font-size:11px;color:var(--muted)}
+h2{font-size:15px;margin-bottom:10px}.btn{display:flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;border:0;border-radius:12px;padding:11px;font-size:14px;font-weight:600;width:100%}.btn.secondary{background:#eef2ff;color:var(--blue)}.btn.danger{background:#fee2e2;color:var(--red)}.btn.small{width:auto;padding:7px 10px;font-size:12px}.btn.green{background:#dcfce7;color:#15803d}
+input,select,textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;margin-bottom:10px}textarea{min-height:80px}label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;margin-right:6px}.t-blue{background:#dbeafe;color:#1d4ed8}.t-green{background:#dcfce7;color:#15803d}.t-amber{background:#fef3c7;color:#b45309}.t-red{background:#fee2e2;color:#b91c1c}.t-gray{background:#f3f4f6;color:#4b5563}
+.item{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.item h3{font-size:15px;margin-bottom:4px}.item p{font-size:13px;color:var(--muted);white-space:pre-wrap}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.empty{text-align:center;color:var(--muted);padding:24px 0}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom)}nav button{flex:1;background:none;border:0;padding:10px 2px;font-size:10px;color:var(--muted)}nav button.active{color:var(--blue);font-weight:700}nav span{display:block;font-size:18px}
+fab{position:fixed;right:16px;bottom:84px}fab button{width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:0;font-size:26px;box-shadow:0 6px 16px rgba(37,99,235,.35)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:40;padding:16px;overflow:auto}.modal.open{display:block}.sheet{background:#fff;border-radius:16px;padding:16px;max-width:640px;margin:24px auto}
+.subtabs{display:flex;gap:8px;margin-bottom:12px}.subtabs button{flex:1;border:1px solid var(--border);background:#fff;border-radius:10px;padding:9px 4px;font-size:12px;color:var(--muted)}.subtabs button.active{background:#eef2ff;color:var(--blue);border-color:var(--blue);font-weight:700}
+.ok{background:#dcfce7;color:#15803d;padding:10px;border-radius:10px;font-size:13px;margin-bottom:10px}.err{background:#fee2e2;color:#b91c1c;padding:10px;border-radius:10px;font-size:13px;margin-bottom:10px}
+.ai{border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff}.ai b{display:block;font-size:13px}.ai span{font-size:11px;color:var(--muted);display:block;margin:4px 0 8px}.ai button{width:100%;padding:8px;font-size:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.chips button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:6px 10px;font-size:11px;color:var(--muted)}.chips button.active{background:#eef2ff;color:var(--blue);border-color:var(--blue);font-weight:700}
+</style></head><body>
+<header><div><h1>Horizonte OS</h1><p>Skills y Prompts por IA</p></div><button class="mic" onclick="openVoz()">🎤</button></header>
+<main id="app"></main><fab><button onclick="openMission()">+</button></fab>
+<nav><button data-tab="inicio" class="active" onclick="setTab('inicio')"><span>◉</span>Inicio</button><button data-tab="misiones" onclick="setTab('misiones')"><span>◎</span>Misiones</button><button data-tab="memoria" onclick="setTab('memoria')"><span>◈</span>Memoria</button><button data-tab="biblioteca" onclick="setTab('biblioteca')"><span>▤</span>Biblioteca</button><button data-tab="ajustes" onclick="setTab('ajustes')"><span>⚙</span>Ajustes</button></nav>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<script>
+const KEY='horizonte_os_v12';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{misiones:[],memoria:[],plantillas:[],skills:[],prompts:[],ajustes:{}};
+let tab='inicio',sub='plantillas',filtro='todos';
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db));const $=i=>document.getElementById(i);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));
+const pTag=p=>({Imprescindible:'t-red',Importante:'t-amber',Conveniente:'t-blue',Prescindible:'t-gray'}[p]||'t-gray');
+const eTag=e=>({Nueva:'t-blue',Analizando:'t-blue',Ejecutando:'t-amber',Verificando:'t-blue','En riesgo':'t-red',Bloqueada:'t-red',Pausada:'t-gray',Completada:'t-green',Cancelada:'t-gray'}[e]||'t-gray');
+const IAS={
+ chatgpt:{nombre:'ChatGPT',url:'https://chatgpt.com/',uso:'Desarrollo, código, redacción y razonamiento general.'},
+ claude:{nombre:'Claude',url:'https://claude.ai/new',uso:'Código largo, análisis de documentos y redacción cuidadosa.'},
+ gemini:{nombre:'Gemini',url:'https://gemini.google.com/app',uso:'Documentos, vídeos largos y tareas multimodales.'},
+ deepseek:{nombre:'DeepSeek',url:'https://chat.deepseek.com/',uso:'Razonamiento y código; opción de bajo coste vía API.'},
+ perplexity:{nombre:'Perplexity',url:'https://www.perplexity.ai/',uso:'Investigación con fuentes y respuestas en tiempo real.'},
+ grok:{nombre:'Grok',url:'https://grok.com/',uso:'Investigación rápida, actualidad e información en tiempo real.'},
+ general:{nombre:'General',url:'#',uso:'Válido para cualquier IA.'}
+};
+function setTab(t){tab=t;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));render()}
+function setSub(s){sub=s;render()}
+function setFiltro(f){filtro=f;render()}
+function render(){const a=$('app');
+if(tab==='inicio'){const act=db.misiones.filter(m=>!['Completada','Cancelada'].includes(m.estado));const al=db.misiones.filter(m=>['En riesgo','Bloqueada'].includes(m.estado));
+a.innerHTML=`<div class="kpis"><div class="kpi"><b>${act.length}</b><span>Activas</span></div><div class="kpi"><b>${db.misiones.filter(m=>m.estado==='Completada').length}</b><span>Completadas</span></div><div class="kpi"><b>${al.length}</b><span>Alertas</span></div></div>
+<div class="card"><h2>Voz</h2><button class="btn" onclick="openVoz()">🎤 Hablar</button><div style="height:8px"></div><label>Llamada rápida</label><input id="tel_num" placeholder="600 123 456"><button class="btn secondary" onclick="prepararLlamada()">Preparar llamada</button></div>
+<div class="card"><h2>Próximas acciones</h2>${act.length?act.slice(0,5).map(m=>`<div class="item"><h3>${esc(m.titulo)}</h3><p>${esc(m.siguiente||'—')}</p><div class="row"><span class="tag ${eTag(m.estado)}">${esc(m.estado)}</span><span class="tag ${pTag(m.prioridad)}">${esc(m.prioridad)}</span></div></div>`).join(''):'<div class="empty">Sin misiones activas.</div>'}</div>
+<div class="card"><h2>Alertas</h2>${al.length?al.map(m=>`<div class="item"><h3>${esc(m.titulo)}</h3><p>${esc(m.riesgo||'Revisar.')}</p></div>`).join(''):'<div class="empty">Sin alertas.</div>'}</div>`}
+if(tab==='misiones'){a.innerHTML=`<div class="card"><button class="btn" onclick="openMission()">+ Nueva misión</button></div>${db.misiones.map(m=>`<div class="item"><h3>${esc(m.titulo)}</h3><p>${esc(m.objetivo||'')}</p><div class="row"><span class="tag ${eTag(m.estado)}">${esc(m.estado)}</span><span class="tag ${pTag(m.prioridad)}">${esc(m.prioridad)}</span></div><div class="row">${m.telefono?`<button class="btn secondary small" onclick="prepararLlamada('${esc(m.telefono)}')">Llamar</button>`:''}<button class="btn secondary small" onclick="openMission('${m.id}')">Editar</button><button class="btn danger small" onclick="borrar('misiones','${m.id}')">Eliminar</button></div></div>`).join('')||'<div class="empty">Sin misiones.</div>'}`}
+if(tab==='memoria'){a.innerHTML=`<div class="card"><button class="btn" onclick="openMemoria()">+ Nueva memoria</button></div>${db.memoria.map(m=>`<div class="item"><h3>${esc(m.titulo)}</h3><p>${esc(m.contenido)}</p><div class="row"><span class="tag t-blue">${esc(m.tipo)}</span><span class="tag t-gray">${esc(m.confianza)}</span></div><div class="row"><button class="btn secondary small" onclick="openMemoria('${m.id}')">Editar</button><button class="btn danger small" onclick="borrar('memoria','${m.id}')">Eliminar</button></div></div>`).join('')||'<div class="empty">Sin memoria.</div>'}`}
+if(tab==='biblioteca'){
+ let cuerpo='';
+ if(sub==='plantillas'){cuerpo=`<div class="card"><button class="btn" onclick="openPlantilla()">+ Nueva plantilla</button></div>${db.plantillas.map(p=>`<div class="item"><h3>${esc(p.titulo)}</h3><p>${esc(p.contenido.slice(0,140))}...</p><div class="row"><button class="btn secondary small" onclick="usarPlantilla('${p.id}')">Usar</button><button class="btn secondary small" onclick="openPlantilla('${p.id}')">Editar</button><button class="btn danger small" onclick="borrar('plantillas','${p.id}')">Eliminar</button></div></div>`).join('')||'<div class="empty">Sin plantillas.</div>'}`}
+ if(sub==='skills'){
+  const chips=['todos',...Object.keys(IAS)];
+  const lista=db.skills.filter(s=>filtro==='todos'||(s.ia||'general')===filtro);
+  cuerpo=`<div id="imp_skill"></div>
+  <div class="card"><h2>Skills</h2><button class="btn" onclick="openImportar('skill')">📥 Importar Skill</button><div style="height:8px"></div><button class="btn secondary" onclick="openSkill()">+ Crear Skill</button></div>
+  <div class="card"><h2>Carpetas por IA</h2><p style="font-size:12px;color:var(--muted);margin-bottom:8px">Pulsa una IA para ver solo sus Skills optimizados.</p>
+  <div class="grid2">${Object.entries(IAS).filter(([k])=>k!=='general').map(([k,v])=>`<div class="ai"><b>${v.nombre}</b><span>${v.uso}</span><button class="btn secondary" onclick="setFiltro('${k}')">Abrir carpeta</button></div>`).join('')}</div></div>
+  <div class="chips">${chips.map(c=>`<button class="${filtro===c?'active':''}" onclick="setFiltro('${c}')">${c==='todos'?'Todos':IAS[c].nombre}</button>`).join('')}</div>
+  ${lista.map(s=>`<div class="item"><h3>${esc(s.titulo)}</h3><p>${esc(s.contenido.slice(0,140))}...</p><div class="row"><span class="tag t-blue">${esc(IAS[s.ia||'general'].nombre)}</span><span class="tag ${s.activa?'t-green':'t-gray'}">${s.activa?'Activa':'Inactiva'}</span></div><div class="row"><button class="btn secondary small" onclick="copiarYAbrir('skills','${s.id}')">📋 Copiar y abrir</button><button class="btn secondary small" onclick="toggleItem('skills','${s.id}')">${s.activa?'Desactivar':'Activar'}</button><button class="btn secondary small" onclick="openSkill('${s.id}')">Editar</button><button class="btn danger small" onclick="borrar('skills','${s.id}')">Eliminar</button></div></div>`).join('')||'<div class="empty">Sin Skills en esta carpeta.</div>'}`}
+ if(sub==='prompts'){
+  const chips=['todos',...Object.keys(IAS)];
+  const lista=db.prompts.filter(p=>filtro==='todos'||(p.ia||'general')===filtro);
+  cuerpo=`<div id="imp_prompt"></div>
+  <div class="card"><h2>Prompts</h2><button class="btn" onclick="openImportar('prompt')">📥 Importar Prompt</button><div style="height:8px"></div><button class="btn secondary" onclick="openPrompt()">+ Crear Prompt</button></div>
+  <div class="card"><h2>Carpetas por IA</h2><p style="font-size:12px;color:var(--muted);margin-bottom:8px">Pulsa una IA para ver solo sus Prompts optimizados.</p>
+  <div class="grid2">${Object.entries(IAS).filter(([k])=>k!=='general').map(([k,v])=>`<div class="ai"><b>${v.nombre}</b><span>${v.uso}</span><button class="btn secondary" onclick="setFiltro('${k}')">Abrir carpeta</button></div>`).join('')}</div></div>
+  <div class="chips">${chips.map(c=>`<button class="${filtro===c?'active':''}" onclick="setFiltro('${c}')">${c==='todos'?'Todos':IAS[c].nombre}</button>`).join('')}</div>
+  ${lista.map(p=>`<div class="item"><h3>${esc(p.titulo)}</h3><p>${esc(p.contenido.slice(0,140))}...</p><div class="row"><span class="tag t-blue">${esc(IAS[p.ia||'general'].nombre)}</span><span class="tag ${p.activa?'t-green':'t-gray'}">${p.activa?'Activo':'Inactivo'}</span></div><div class="row"><button class="btn secondary small" onclick="copiarYAbrir('prompts','${p.id}')">📋 Copiar y abrir</button><button class="btn secondary small" onclick="toggleItem('prompts','${p.id}')">${p.activa?'Desactivar':'Activar'}</button><button class="btn secondary small" onclick="openPrompt('${p.id}')">Editar</button><button class="btn danger small" onclick="borrar('prompts','${p.id}')">Eliminar</button></div></div>`).join('')||'<div class="empty">Sin Prompts en esta carpeta.</div>'}`}
+ a.innerHTML=`<div class="subtabs"><button class="${sub==='plantillas'?'active':''}" onclick="setSub('plantillas')">Plantillas</button><button class="${sub==='skills'?'active':''}" onclick="setSub('skills')">Skills</button><button class="${sub==='prompts'?'active':''}" onclick="setSub('prompts')">Prompts</button></div>`+cuerpo}
+if(tab==='ajustes'){a.innerHTML=`<div class="card"><h2>Copia de seguridad</h2><button class="btn" onclick="exportar()">Exportar copia</button><div style="height:8px"></div><label>Importar</label><input type="file" accept=".json" onchange="importar(event)"></div><div class="card"><h2>Voz</h2><p style="font-size:13px;color:var(--muted)">“Buscar …” abre Google. “Buscar en Horizonte …” busca en la app.</p></div>`}}
+function modal(h){$('sheet').innerHTML=h;$('modal').classList.add('open')}function cerrar(){$('modal').classList.remove('open')}
+function abrirIA(k){window.open(IAS[k].url,'_blank')}
+function copiarYAbrir(tipo,id){const x=db[tipo].find(i=>i.id===id);if(!x)return;navigator.clipboard.writeText(x.contenido).then(()=>abrirIA(x.ia||'general'),()=>abrirIA(x.ia||'general'))}
+function openMission(id){const m=db.misiones.find(x=>x.id===id)||{titulo:'',objetivo:'',contexto:'',restricciones:'',criterios:'',prioridad:'Importante',estado:'Nueva',planA:'',planB:'',riesgo:'',siguiente:'',telefono:''};
+modal(`<h2>${id?'Editar':'Nueva'} misión</h2><label>Título</label><input id="f_titulo" value="${esc(m.titulo)}"><label>Objetivo</label><textarea id="f_objetivo">${esc(m.objetivo)}</textarea><label>Contexto</label><textarea id="f_contexto">${esc(m.contexto)}</textarea><label>Restricciones</label><textarea id="f_restricciones">${esc(m.restricciones)}</textarea><label>Criterios</label><textarea id="f_criterios">${esc(m.criterios)}</textarea><div class="grid2"><div><label>Prioridad</label><select id="f_prioridad">${['Imprescindible','Importante','Conveniente','Prescindible'].map(x=>`<option ${m.prioridad===x?'selected':''}>${x}</option>`).join('')}</select></div><div><label>Estado</label><select id="f_estado">${['Nueva','Analizando','Ejecutando','Verificando','En riesgo','Bloqueada','Pausada','Completada','Cancelada'].map(x=>`<option ${m.estado===x?'selected':''}>${x}</option>`).join('')}</select></div></div><label>Plan A</label><textarea id="f_planA">${esc(m.planA)}</textarea><label>Plan B</label><textarea id="f_planB">${esc(m.planB)}</textarea><label>Riesgo</label><textarea id="f_riesgo">${esc(m.riesgo)}</textarea><label>Próxima acción</label><input id="f_siguiente" value="${esc(m.siguiente)}"><label>Teléfono</label><input id="f_tel" value="${esc(m.telefono||'')}"><button class="btn" onclick="guardarMission('${id||''}')">Guardar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function guardarMission(id){const m={id:id||crypto.randomUUID(),titulo:$('f_titulo').value.trim(),objetivo:$('f_objetivo').value,contexto:$('f_contexto').value,restricciones:$('f_restricciones').value,criterios:$('f_criterios').value,prioridad:$('f_prioridad').value,estado:$('f_estado').value,planA:$('f_planA').value,planB:$('f_planB').value,riesgo:$('f_riesgo').value,siguiente:$('f_siguiente').value,telefono:$('f_tel').value,actualizada:new Date().toISOString()};if(!m.titulo)return alert('Título obligatorio');const i=db.misiones.findIndex(x=>x.id===id);i>=0?db.misiones[i]=m:db.misiones.unshift(m);save();cerrar();render()}
+function openMemoria(id,tipo){const m=db.memoria.find(x=>x.id===id)||{titulo:'',contenido:'',tipo:tipo||'Preferencia',confianza:'Alta'};
+modal(`<h2>Memoria</h2><label>Título</label><input id="m_titulo" value="${esc(m.titulo)}"><label>Contenido</label><textarea id="m_contenido">${esc(m.contenido)}</textarea><label>Tipo</label><select id="m_tipo">${['Hecho verificado','Preferencia','Contexto de proyecto','Decisión','Suposición','Aprendizaje','Gasto','Idea'].map(x=>`<option ${m.tipo===x?'selected':''}>${x}</option>`).join('')}</select><label>Confianza</label><select id="m_confianza">${['Alta','Media','Baja'].map(x=>`<option ${m.confianza===x?'selected':''}>${x}</option>`).join('')}</select><button class="btn" onclick="guardarMemoria('${id||''}')">Guardar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function guardarMemoria(id){const m={id:id||crypto.randomUUID(),titulo:$('m_titulo').value.trim(),contenido:$('m_contenido').value,tipo:$('m_tipo').value,confianza:$('m_confianza').value,fecha:new Date().toISOString()};if(!m.titulo)return alert('Título obligatorio');const i=db.memoria.findIndex(x=>x.id===id);i>=0?db.memoria[i]=m:db.memoria.unshift(m);save();cerrar();render()}
+function openPlantilla(id){const p=db.plantillas.find(x=>x.id===id)||{titulo:'',variables:'',contenido:''};
+modal(`<h2>Plantilla</h2><label>Título</label><input id="p_titulo" value="${esc(p.titulo)}"><label>Variables</label><input id="p_variables" value="${esc(p.variables)}"><label>Contenido</label><textarea id="p_contenido" style="min-height:160px">${esc(p.contenido)}</textarea><button class="btn" onclick="guardarPlantilla('${id||''}')">Guardar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function guardarPlantilla(id){const p={id:id||crypto.randomUUID(),titulo:$('p_titulo').value.trim(),variables:$('p_variables').value,contenido:$('p_contenido').value};if(!p.titulo)return alert('Título obligatorio');const i=db.plantillas.findIndex(x=>x.id===id);i>=0?db.plantillas[i]=p:db.plantillas.unshift(p);save();cerrar();render()}
+function usarPlantilla(id){const p=db.plantillas.find(x=>x.id===id);modal(`<h2>Usar: ${esc(p.titulo)}</h2><textarea id="u_valores"></textarea><button class="btn" onclick="crearDesdePlantilla('${id}')">Crear misión</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function crearDesdePlantilla(id){const p=db.plantillas.find(x=>x.id===id);db.misiones.unshift({id:crypto.randomUUID(),titulo:p.titulo,objetivo:$('u_valores').value||p.contenido,contexto:'',restricciones:'',criterios:'',prioridad:'Importante',estado:'Nueva',planA:'',planB:'',riesgo:'',siguiente:'Completar variables',telefono:'',actualizada:new Date().toISOString()});save();cerrar();setTab('misiones')}
+function openSkill(id){const s=db.skills.find(x=>x.id===id)||{titulo:'',contenido:'',ia:'general',activa:false};
+modal(`<h2>${id?'Editar':'Nuevo'} Skill</h2><label>Título</label><input id="s_titulo" value="${esc(s.titulo)}"><label>Optimizado para</label><select id="s_ia">${Object.entries(IAS).map(([k,v])=>`<option value="${k}" ${(s.ia||'general')===k?'selected':''}>${v.nombre}</option>`).join('')}</select><label>Contenido</label><textarea id="s_contenido" style="min-height:180px">${esc(s.contenido)}</textarea><button class="btn" onclick="guardarSkill('${id||''}')">Guardar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function guardarSkill(id){const s={id:id||crypto.randomUUID(),titulo:$('s_titulo').value.trim(),ia:$('s_ia').value,contenido:$('s_contenido').value,activa:db.skills.find(x=>x.id===id)?.activa||false};if(!s.titulo)return alert('Título obligatorio');const i=db.skills.findIndex(x=>x.id===id);i>=0?db.skills[i]=s:db.skills.unshift(s);save();cerrar();render()}
+function openPrompt(id){const p=db.prompts.find(x=>x.id===id)||{titulo:'',contenido:'',ia:'general',activa:false};
+modal(`<h2>${id?'Editar':'Nuevo'} Prompt</h2><label>Título</label><input id="pr_titulo" value="${esc(p.titulo)}"><label>Optimizado para</label><select id="pr_ia">${Object.entries(IAS).map(([k,v])=>`<option value="${k}" ${(p.ia||'general')===k?'selected':''}>${v.nombre}</option>`).join('')}</select><label>Instrucciones</label><textarea id="pr_contenido" style="min-height:180px">${esc(p.contenido)}</textarea><button class="btn" onclick="guardarPrompt('${id||''}')">Guardar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cancelar</button>`)}
+function guardarPrompt(id){const p={id:id||crypto.randomUUID(),titulo:$('pr_titulo').value.trim(),ia:$('pr_ia').value,contenido:$('pr_contenido').value,activa:db.prompts.find(x=>x.id===id)?.activa||false};if(!p.titulo)return alert('Título obligatorio');const i=db.prompts.findIndex(x=>x.id===id);i>=0?db.prompts[i]=p:db.prompts.unshift(p);save();cerrar();render()}
+function toggleItem(tipo,id){const x=db[tipo].find(i=>i.id===id);if(x){x.activa=!x.activa;save();render()}}
+function openImportar(tipo){
+ modal(`<h2>Importar ${tipo==='skill'?'Skill':'Prompt'}</h2>
+ <div id="imp_status"></div>
+ <label>Opción 1: importar archivo</label>
+ <input type="file" id="imp_file" accept=".txt,.md,.json" onchange="procesarArchivo('${tipo}')">
+ <label>Opción 2: pegar texto</label>
+ <input id="imp_titulo" placeholder="Título">
+ <select id="imp_ia"><option value="general">General</option>${Object.entries(IAS).filter(([k])=>k!=='general').map(([k,v])=>`<option value="${k}">${v.nombre}</option>`).join('')}</select>
+ <textarea id="imp_contenido" placeholder="Pega aquí el contenido"></textarea>
+ <button class="btn" onclick="guardarPegado('${tipo}')">Guardar texto pegado</button>
+ <div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cerrar</button>`)}
+function procesarArchivo(tipo){
+ const f=$('imp_file').files[0];const st=$('imp_status');
+ if(!f){st.innerHTML='<div class="err">Selecciona un archivo.</div>';return}
+ st.innerHTML='<div class="ok">Leyendo archivo…</div>';
+ const r=new FileReader();
+ r.onload=()=>{
+  try{
+   const texto=r.result;let items=[];
+   if(f.name.endsWith('.json')){const d=JSON.parse(texto);items=Array.isArray(d)?d:[d];items=items.map(x=>({titulo:x.titulo||x.title||f.name,contenido:x.contenido||x.content||x.texto||JSON.stringify(x),ia:x.ia||'general'}))}
+   else items=[{titulo:f.name.replace(/\.[^.]+$/,''),contenido:texto,ia:$('imp_ia').value}];
+   items.forEach(x=>db[tipo==='skill'?'skills':'prompts'].unshift({id:crypto.randomUUID(),titulo:x.titulo,contenido:x.contenido,ia:x.ia||'general',activa:false}));
+   save();st.innerHTML='<div class="ok">Importado: '+items.length+' elemento(s). Cierra y revisa la lista.</div>';
+  }catch(err){st.innerHTML='<div class="err">Archivo no válido: '+err.message+'</div>'}
+ };
+ r.onerror=()=>{st.innerHTML='<div class="err">No se pudo leer el archivo.</div>'};
+ r.readAsText(f);
+}
+function guardarPegado(tipo){
+ const titulo=$('imp_titulo').value.trim(),contenido=$('imp_contenido').value.trim();const st=$('imp_status');
+ if(!titulo||!contenido){st.innerHTML='<div class="err">Faltan título o contenido.</div>';return}
+ db[tipo==='skill'?'skills':'prompts'].unshift({id:crypto.randomUUID(),titulo,contenido,ia:$('imp_ia').value,activa:false});
+ save();st.innerHTML='<div class="ok">Guardado correctamente.</div>';
+}
+function copiarInstrucciones(){const activos=db.prompts.filter(p=>p.activa);const skills=db.skills.filter(s=>s.activa);
+let txt='Actúa según estas instrucciones:\n\n';
+activos.forEach(p=>{txt+='## PROMPT: '+p.titulo+'\n'+p.contenido+'\n\n'});
+skills.forEach(s=>{txt+='## SKILL: '+s.titulo+'\n'+s.contenido+'\n\n'});
+if(!activos.length&&!skills.length)txt+='No hay instrucciones activas.';
+navigator.clipboard.writeText(txt).then(()=>alert('Instrucciones activas copiadas.'),()=>alert('No se pudo copiar.'))}
+function borrar(tipo,id){if(!confirm('¿Eliminar?'))return;db[tipo]=db[tipo].filter(x=>x.id!==id);save();render()}
+function exportar(){const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='horizonte-os-copia.json';a.click()}
+function importar(e){const f=e.target.files[0];const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.misiones||!d.memoria)throw 0;db=Object.assign({skills:[],prompts:[],plantillas:[]},d);save();render();alert('Importada.')}catch{alert('Archivo no válido.')}};r.readAsText(f)}
+function openVoz(){modal(`<h2>Hablar con Horizonte</h2><p style="font-size:13px;color:var(--muted)">“Buscar coches eléctricos” abre Google.<br>“Buscar en Horizonte seguro del coche” busca en la app.</p><div id="voz_estado" class="empty">Pulsa para hablar</div><button class="btn" id="btn_voz" onclick="toggleVoz()">🎤 Empezar a escuchar</button><div style="height:8px"></div><button class="btn secondary" onclick="cerrar()">Cerrar</button>`)}
+let rec=null,escuchando=false;
+function resetVoz(msg){escuchando=false;rec=null;const b=$('btn_voz');if(b)b.textContent='🎤 Volver a escuchar';const e=$('voz_estado');if(e&&msg)e.textContent=msg}
+function toggleVoz(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){resetVoz('Tu navegador no soporta voz. Usa Chrome en Android.');return}
+ if(escuchando){try{rec&&rec.stop()}catch{};return}
+ try{if(rec){rec.onend=rec.onerror=rec.onresult=null;try{rec.abort()}catch{}}}catch{}
+ rec=null;
+ try{
+  rec=new SR();rec.lang='es-ES';rec.interimResults=false;escuchando=true;
+  $('btn_voz').textContent='⏹ Escuchando…';$('voz_estado').textContent='Habla ahora…';
+  rec.onresult=e=>{const texto=e.results[0][0].transcript.trim();$('voz_estado').textContent='He oído: '+texto;setTimeout(()=>{try{procesarVoz(texto)}catch(err){resetVoz('Error: '+err.message)}},50)};
+  rec.onerror=e=>{resetVoz('Error: '+e.error+'. Pulsa para reintentar.')};
+  rec.onend=()=>{if(escuchando)resetVoz('Escucha finalizada. Pulsa para volver a hablar.')};
+  rec.start();
+ }catch(err){resetVoz('No se pudo iniciar: '+err.message)}
+}
+function nuevaMision(titulo,obj,prioridad,estado,sig){db.misiones.unshift({id:crypto.randomUUID(),titulo,objetivo:obj||titulo,contexto:'',restricciones:'',criterios:'',prioridad:prioridad||'Importante',estado:estado||'Nueva',planA:'',planB:'',riesgo:'',siguiente:sig||'Definir próxima acción',telefono:'',actualizada:new Date().toISOString()});save();render();return 'Misión creada: '+titulo}
+function guardarNota(tipo,contenido){db.memoria.unshift({id:crypto.randomUUID(),titulo:contenido.slice(0,60)||tipo,contenido,tipo,confianza:'Alta',fecha:new Date().toISOString()});save();render();return 'Guardado en Memoria.'}
+function procesarVoz(texto){const t=texto.toLowerCase();let respuesta='';
+const after=re=>texto.replace(re,'').trim();
+if(/^(tarea|apunta tarea|crea misi[oó]n|nueva misi[oó]n)\b/.test(t)){respuesta=nuevaMision(after(/^(tarea[:,]?|apunta tarea[:,]?|crea misi[oó]n[:,]?|nueva misi[oó]n[:,]?)\s*/i),'','Importante','Nueva','Definir próxima acción')}
+else if(/^(recu[eé]rdame|recordatorio|no olvidar)\b/.test(t)){respuesta=nuevaMision(after(/^(recu[eé]rdame[:,]?|recordatorio[:,]?|no olvidar[:,]?)\s*/i),'','Importante','Nueva','Revisar fecha y ejecutar')}
+else if(/^gasto\b/.test(t)){respuesta=guardarNota('Gasto',after(/^gasto[:,]?\s*/i))}
+else if(/^decisi[oó]n\b/.test(t)){respuesta=nuevaMision(after(/^decisi[oó]n[:,]?\s*/i),'','Importante','Analizando','Comparar opciones y definir Plan A/B')}
+else if(/^idea\b/.test(t)){respuesta=guardarNota('Idea',after(/^idea[:,]?\s*/i))}
+else if(/^(aprendizaje|aprend[ií])\b/.test(t)){respuesta=guardarNota('Aprendizaje',after(/^(aprendizaje[:,]?|aprend[ií][:,]?)\s*/i))}
+else if(/^buscar en horizonte\b/.test(t)){const q=after(/^buscar en horizonte\s*/i);const r=[...db.misiones.filter(m=>(m.titulo+m.objetivo).toLowerCase().includes(q.toLowerCase())),...db.memoria.filter(m=>(m.titulo+m.contenido).toLowerCase().includes(q.toLowerCase()))];respuesta=r.length?('Encontrados '+r.length+' resultados: '+q):'Sin resultados: '+q}
+else if(/^(buscar|busca|google)\b/.test(t)){const q=after(/^(buscar|busca|google)\s*/i);if(q){window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');respuesta='Abriendo Google: '+q}else respuesta='Di qué buscar.'}
+else if(/^prioridad alta\b/.test(t)){respuesta=nuevaMision(after(/^prioridad alta[:,]?\s*/i),'','Imprescindible','Nueva','Ejecutar cuanto antes')}
+else if(/^bloqueada\b/.test(t)){respuesta=nuevaMision(after(/^bloqueada[:,]?\s*/i),'','Importante','Bloqueada','Identificar causa')}
+else if(/^completada\b/.test(t)){const q=after(/^completada[:,]?\s*/i);const m=db.misiones.find(x=>x.titulo.toLowerCase().includes(q));if(m){m.estado='Completada';save();respuesta='Completada: '+m.titulo}else respuesta='No encontrada.'}
+else if(/^plan b para\b/.test(t)){const q=after(/^plan b para\s*/i);const m=db.misiones.find(x=>x.titulo.toLowerCase().includes(q));if(m){m.planB=texto;save();respuesta='Plan B añadido.'}else respuesta='No encontrada.'}
+else if(/resumen del d[ií]a/.test(t)){const act=db.misiones.filter(m=>!['Completada','Cancelada'].includes(m.estado));respuesta=act.length+' activas: '+act.map(m=>m.titulo).join(' · ')}
+else if(/exportar copia/.test(t)){exportar();respuesta='Copia exportada.'}
+else if(t.includes('llamar')){const num=(texto.match(/\d[\d\s.-]{6,}/)||[])[0];if(num){prepararLlamada(num.replace(/[^\d+]/g,''));respuesta='Preparando llamada.'}else respuesta='Número no reconocido.'}
+else if(/^nota\b/.test(t)){respuesta=guardarNota('Preferencia',after(/^nota[:,]?\s*/i))}
+else{respuesta='No lo he entendido. Prueba: “Tarea: …”, “Buscar …” o “Resumen del día”.'}
+resetVoz(respuesta)}
+function prepararLlamada(num){const numero=num||($('tel_num')&&$('tel_num').value.trim());if(!numero)return alert('Introduce un número.');if(!confirm('¿Abrir llamada a '+numero+'?'))return;window.location.href='tel:'+numero.replace(/[^\d+]/g,'')}
+render();
+</script></body></html>
