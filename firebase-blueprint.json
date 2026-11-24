@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private Horizonte OS user profile anchored to Firebase Authentication UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified user email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name shown in Horizonte OS",
+          "maxLength": 160
+        },
+        "superAgenteModo": {
+          "type": "string",
+          "enum": ["modo1", "modo2", "modo3"],
+          "description": "Active Super Agent operational mode"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": ["uid", "email", "displayName", "superAgenteModo", "createdAt", "updatedAt"]
+    },
+    "CloudMission": {
+      "title": "CloudMission",
+      "description": "A strategic Horizonte OS mission synchronized in Firestore for the authenticated owner.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "titulo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "categoria": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "objetivo": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "prioridad": {
+          "type": "string",
+          "enum": ["Imprescindible", "Alta", "Importante", "Media", "Conveniente", "Prescindible"]
+        },
+        "estado": {
+          "type": "string",
+          "enum": ["Nueva", "Analizando", "Ejecutando", "Verificando", "Activa", "En riesgo", "Bloqueada", "Pausada", "Completada", "Cancelada"]
+        },
+        "siguiente": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "titulo", "categoria", "objetivo", "prioridad", "estado", "siguiente", "createdAt", "updatedAt"]
+    },
+    "WorkspaceLink": {
+      "title": "WorkspaceLink",
+      "description": "Pinned Google Drive, Sheets, Docs, or Slides reference linked to Horizonte OS.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["drive_file", "sheet", "doc", "slides"]
+        },
+        "externalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "webViewLink": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "kind", "externalId", "name", "webViewLink", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile document scoped strictly to the verified Firebase Auth owner."
+    },
+    "/users/{userId}/missions/{missionId}": {
+      "schema": { "$ref": "#/entities/CloudMission" },
+      "description": "User-owned Horizonte OS missions synced in real time via Firestore."
+    },
+    "/users/{userId}/workspaceItems/{itemId}": {
+      "schema": { "$ref": "#/entities/WorkspaceLink" },
+      "description": "Pinned Google Drive, Docs, Sheets, and Slides links saved per user."
+    }
+  }
+}

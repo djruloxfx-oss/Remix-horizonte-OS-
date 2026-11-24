@@ -1,0 +1,164 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isVerifiedOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidSuperAgentMode(mode) {
+      return mode in ['modo1', 'modo2', 'modo3'];
+    }
+
+    function isValidMissionPriority(priority) {
+      return priority in ['Imprescindible', 'Alta', 'Importante', 'Media', 'Conveniente', 'Prescindible'];
+    }
+
+    function isValidMissionStatus(status) {
+      return status in ['Nueva', 'Analizando', 'Ejecutando', 'Verificando', 'Activa', 'En riesgo', 'Bloqueada', 'Pausada', 'Completada', 'Cancelada'];
+    }
+
+    function isValidWorkspaceKind(kind) {
+      return kind in ['drive_file', 'sheet', 'doc', 'slides'];
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'superAgenteModo', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'superAgenteModo', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 1 && data.email.size() <= 256
+        && data.displayName is string && data.displayName.size() <= 160
+        && isValidSuperAgentMode(data.superAgenteModo)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCloudMission(data, userId, missionId) {
+      return data.keys().hasAll(['id', 'ownerId', 'titulo', 'categoria', 'objetivo', 'prioridad', 'estado', 'siguiente', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'titulo', 'categoria', 'objetivo', 'prioridad', 'estado', 'siguiente', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == missionId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && data.titulo is string && data.titulo.size() >= 1 && data.titulo.size() <= 200
+        && data.categoria is string && data.categoria.size() <= 80
+        && data.objetivo is string && data.objetivo.size() <= 2000
+        && isValidMissionPriority(data.prioridad)
+        && isValidMissionStatus(data.estado)
+        && data.siguiente is string && data.siguiente.size() <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWorkspaceLink(data, userId, itemId) {
+      return data.keys().hasAll(['id', 'ownerId', 'kind', 'externalId', 'name', 'webViewLink', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'kind', 'externalId', 'name', 'webViewLink', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && data.id == itemId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidWorkspaceKind(data.kind)
+        && isValidId(data.externalId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 256
+        && data.webViewLink is string && data.webViewLink.size() <= 512
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isVerifiedOwner(userId) && isValidId(userId);
+      allow list: if isVerifiedOwner(userId) && existing().uid == request.auth.uid;
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'superAgenteModo', 'updatedAt']);
+      allow delete: if isVerifiedOwner(userId) && isValidId(userId);
+
+      match /missions/{missionId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(userId) && isValidId(missionId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(missionId)
+          && isValidCloudMission(incoming(), userId, missionId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(missionId)
+          && isValidCloudMission(incoming(), userId, missionId)
+          && existing().estado != 'Cancelada'
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['estado', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['titulo', 'categoria', 'objetivo', 'prioridad', 'estado', 'siguiente', 'updatedAt'])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(userId) && isValidId(missionId);
+      }
+
+      match /workspaceItems/{itemId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(userId) && isValidId(itemId);
+        allow list: if isVerifiedOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(itemId)
+          && isValidWorkspaceLink(incoming(), userId, itemId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(itemId)
+          && isValidWorkspaceLink(incoming(), userId, itemId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().kind == existing().kind
+          && incoming().externalId == existing().externalId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'webViewLink', 'updatedAt']);
+        allow delete: if isVerifiedOwner(userId) && isValidId(userId) && isValidId(itemId);
+      }
+    }
+  }
+}

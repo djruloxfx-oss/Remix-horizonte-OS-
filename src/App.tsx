@@ -56,6 +56,7 @@ import {
   logout,
 } from './lib/firebase';
 import { syncAuthProfile } from './services/cloudSync';
+import { ensureFirestoreUserProfile } from './services/firestoreSync';
 
 const STORAGE_KEY = 'horizonte_os_v19_4_unified';
 const LEGACY_V12_KEY = 'horizonte_os_v12';
@@ -143,7 +144,7 @@ const NAV_ITEMS: { id: AppTab; label: string; shortLabel: string; icon: React.Co
   { id: 'biblioteca', label: 'Biblioteca IA', shortLabel: 'Biblioteca', icon: BookOpen },
   { id: 'agentes', label: 'Agentes y Aladín', shortLabel: 'Agentes', icon: Bot },
   { id: 'memoria', label: 'Memoria', shortLabel: 'Memoria', icon: Database },
-  { id: 'workspace', label: 'Drive y Sheets', shortLabel: 'Drive', icon: Cloud },
+  { id: 'workspace', label: 'Google Workspace', shortLabel: 'Workspace', icon: Cloud },
   { id: 'terminal', label: 'Terminal CLI', shortLabel: 'CLI', icon: TerminalIcon },
   { id: 'ajustes', label: 'Ajustes y Backup', shortLabel: 'Ajustes', icon: Settings },
 ];
@@ -202,11 +203,14 @@ export default function App() {
       setWorkspaceToken(accessToken);
       setNeedsWorkspaceAuth(false);
       try {
-        await syncAuthProfile();
+        await Promise.all([
+          syncAuthProfile(),
+          ensureFirestoreUserProfile(user, state.perfil.superAgenteModo),
+        ]);
       } catch {
-        // Profile sync is non-blocking for Workspace UI
+        // Non-blocking for Workspace UI
       }
-      notify('Cuenta de Google conectada con Drive y Sheets.');
+      notify('Cuenta de Google conectada con Workspace y Firebase.');
     } catch (err) {
       notify(
         err instanceof Error
@@ -217,7 +221,7 @@ export default function App() {
     } finally {
       setIsSigningIn(false);
     }
-  }, [notify]);
+  }, [notify, state.perfil.superAgenteModo]);
 
   const handleGoogleLogout = useCallback(async () => {
     await logout();
@@ -1371,6 +1375,20 @@ export default function App() {
                 setState((prev) => ({
                   ...prev,
                   tareas: [...fresh, ...prev.tareas],
+                }));
+              }}
+              onAddMemoryFromDoc={(title, content) => {
+                const mem: MemoryItem = {
+                  id: crypto.randomUUID(),
+                  titulo: title.slice(0, 120),
+                  contenido: content,
+                  tipo: 'Proyecto',
+                  confianza: 'Alta',
+                  fecha: new Date().toISOString(),
+                };
+                setState((prev) => ({
+                  ...prev,
+                  memoria: [mem, ...prev.memoria],
                 }));
               }}
               onNotify={notify}

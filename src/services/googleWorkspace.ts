@@ -28,6 +28,27 @@ export interface SpreadsheetMeta {
   sheets: SheetTabMeta[];
 }
 
+export interface GoogleDocSummary {
+  documentId: string;
+  title: string;
+  plainText: string;
+  endIndex: number;
+  webViewLink: string;
+}
+
+export interface GoogleSlidePage {
+  objectId: string;
+  slideNumber: number;
+  texts: string[];
+}
+
+export interface GooglePresentationSummary {
+  presentationId: string;
+  title: string;
+  slides: GoogleSlidePage[];
+  webViewLink: string;
+}
+
 async function workspaceFetch(
   url: string,
   accessToken: string | null,
@@ -79,13 +100,17 @@ export async function listDriveFiles(
   accessToken: string | null,
   options: {
     query?: string;
-    filter?: 'all' | 'backups' | 'sheets';
+    filter?: 'all' | 'backups' | 'sheets' | 'docs' | 'slides';
     pageSize?: number;
   } = {}
 ): Promise<DriveFileItem[]> {
   const clauses: string[] = ['trashed = false'];
   if (options.filter === 'sheets') {
     clauses.push("mimeType = 'application/vnd.google-apps.spreadsheet'");
+  } else if (options.filter === 'docs') {
+    clauses.push("mimeType = 'application/vnd.google-apps.document'");
+  } else if (options.filter === 'slides') {
+    clauses.push("mimeType = 'application/vnd.google-apps.presentation'");
   } else if (options.filter === 'backups') {
     clauses.push(
       "(mimeType = 'application/json' or mimeType = 'text/plain' or name contains 'horizonte')"
@@ -190,6 +215,8 @@ export async function deleteDriveFile(
     { method: 'DELETE' }
   );
 }
+
+// ---------- GOOGLE SHEETS ----------
 
 export async function listSpreadsheets(
   accessToken: string | null,
@@ -346,6 +373,336 @@ export async function appendSheetRows(
         majorDimension: 'ROWS',
         values,
       }),
+    }
+  );
+}
+
+// ---------- GOOGLE DOCS ----------
+
+export async function listGoogleDocs(
+  accessToken: string | null,
+  query?: string
+): Promise<DriveFileItem[]> {
+  return listDriveFiles(accessToken, {
+    query,
+    filter: 'docs',
+    pageSize: 30,
+  });
+}
+
+interface DocsStructuralElement {
+  endIndex?: number;
+  paragraph?: {
+    elements?: {
+      textRun?: { content?: string };
+    }[];
+  };
+  table?: {
+    tableRows?: {
+      tableCells?: {
+        content?: DocsStructuralElement[];
+      }[];
+    }[];
+  };
+}
+
+function extractTextFromDocsElements(elements: DocsStructuralElement[] = []): string {
+  const chunks: string[] = [];
+  for (const el of elements) {
+    if (el.paragraph?.elements) {
+      const line = el.paragraph.elements
+        .map((pe) => pe.textRun?.content || '')
+        .join('');
+      if (line) chunks.push(line);
+    } else if (el.table?.tableRows) {
+      for (const row of el.table.tableRows) {
+        const cellTexts = (row.tableCells || []).map((cell) =>
+          extractTextFromDocsElements(cell.content || []).trim()
+        );
+        if (cellTexts.some(Boolean)) {
+          chunks.push(`${cellTexts.join(' | ')}\n`);
+        }
+      }
+    }
+  }
+  return chunks.join('');
+}
+
+export async function getGoogleDoc(
+  accessToken: string | null,
+  documentId: string
+): Promise<GoogleDocSummary> {
+  const res = await workspaceFetch(
+    `https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}`,
+    accessToken
+  );
+  const data = (await res.json()) as {
+    documentId: string;
+    title?: string;
+    body?: { content?: DocsStructuralElement[] };
+  };
+  const content = data.body?.content || [];
+  const lastEl = content[content.length - 1];
+  const endIndex = lastEl?.endIndex ?? 1;
+  return {
+    documentId: data.documentId,
+    title: data.title || 'Documento sin título',
+    plainText: extractTextFromDocsElements(content).trim(),
+    endIndex,
+    webViewLink: `https://docs.google.com/document/d/${encodeURIComponent(data.documentId)}/edit`,
+  };
+}
+
+export async function createGoogleDoc(
+  accessToken: string | null,
+  title: string,
+  initialBodyText?: string
+): Promise<GoogleDocSummary> {
+  const res = await workspaceFetch(
+    'https://docs.googleapis.com/v1/documents',
+    accessToken,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    }
+  );
+  const created = (await res.json()) as {
+    documentId: string;
+    title?: string;
+  };
+
+  if (initialBodyText && initialBodyText.trim()) {
+    await workspaceFetch(
+      `https://docs.googleapis.com/v1/documents/${encodeURIComponent(created.documentId)}:batchUpdate`,
+      accessToken,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [
+            {
+              insertText: {
+                location: { index: 1 },
+                text: initialBodyText.trim() + '\n',
+              },
+            },
+          ],
+        }),
+      }
+    );
+  }
+
+  return getGoogleDoc(accessToken, created.documentId);
+}
+
+export async function appendGoogleDocText(
+  accessToken: string | null,
+  documentId: string,
+  textToAppend: string,
+  endIndex: number
+): Promise<void> {
+  const insertAt = Math.max(1, endIndex - 1);
+  const normalized = textToAppend.endsWith('\n')
+    ? `\n${textToAppend}`
+    : `\n${textToAppend}\n`;
+
+  await workspaceFetch(
+    `https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}:batchUpdate`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [
+          {
+            insertText: {
+              location: { index: insertAt },
+              text: normalized,
+            },
+          },
+        ],
+      }),
+    }
+  );
+}
+
+export async function replaceGoogleDocText(
+  accessToken: string | null,
+  documentId: string,
+  newText: string,
+  currentEndIndex: number
+): Promise<void> {
+  const requests: Record<string, unknown>[] = [];
+  if (currentEndIndex > 2) {
+    requests.push({
+      deleteContentRange: {
+        range: {
+          startIndex: 1,
+          endIndex: currentEndIndex - 1,
+        },
+      },
+    });
+  }
+  requests.push({
+    insertText: {
+      location: { index: 1 },
+      text: newText.trimEnd() + '\n',
+    },
+  });
+
+  await workspaceFetch(
+    `https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}:batchUpdate`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests }),
+    }
+  );
+}
+
+// ---------- GOOGLE SLIDES ----------
+
+export async function listGooglePresentations(
+  accessToken: string | null,
+  query?: string
+): Promise<DriveFileItem[]> {
+  return listDriveFiles(accessToken, {
+    query,
+    filter: 'slides',
+    pageSize: 30,
+  });
+}
+
+interface SlidesPageElement {
+  shape?: {
+    text?: {
+      textElements?: {
+        textRun?: { content?: string };
+      }[];
+    };
+  };
+}
+
+export async function getGooglePresentation(
+  accessToken: string | null,
+  presentationId: string
+): Promise<GooglePresentationSummary> {
+  const res = await workspaceFetch(
+    `https://slides.googleapis.com/v1/presentations/${encodeURIComponent(presentationId)}`,
+    accessToken
+  );
+  const data = (await res.json()) as {
+    presentationId: string;
+    title?: string;
+    slides?: {
+      objectId: string;
+      pageElements?: SlidesPageElement[];
+    }[];
+  };
+
+  const slides: GoogleSlidePage[] = (data.slides || []).map((slide, idx) => {
+    const texts: string[] = [];
+    for (const pe of slide.pageElements || []) {
+      const content = (pe.shape?.text?.textElements || [])
+        .map((te) => te.textRun?.content || '')
+        .join('')
+        .trim();
+      if (content) texts.push(content);
+    }
+    return {
+      objectId: slide.objectId,
+      slideNumber: idx + 1,
+      texts,
+    };
+  });
+
+  return {
+    presentationId: data.presentationId,
+    title: data.title || 'Presentación sin título',
+    slides,
+    webViewLink: `https://docs.google.com/presentation/d/${encodeURIComponent(data.presentationId)}/edit`,
+  };
+}
+
+export async function createGooglePresentation(
+  accessToken: string | null,
+  title: string
+): Promise<GooglePresentationSummary> {
+  const res = await workspaceFetch(
+    'https://slides.googleapis.com/v1/presentations',
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    }
+  );
+  const created = (await res.json()) as {
+    presentationId: string;
+  };
+  return getGooglePresentation(accessToken, created.presentationId);
+}
+
+export async function addSlideWithText(
+  accessToken: string | null,
+  presentationId: string,
+  slideTitle: string,
+  bodyText: string
+): Promise<void> {
+  const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+  const slideId = `horizonte_slide_${suffix}`;
+  const titleId = `horizonte_title_${suffix}`;
+  const bodyId = `horizonte_body_${suffix}`;
+
+  const requests: Record<string, unknown>[] = [
+    {
+      createSlide: {
+        objectId: slideId,
+        slideLayoutReference: {
+          predefinedLayout: 'TITLE_AND_BODY',
+        },
+        placeholderIdMappings: [
+          {
+            layoutPlaceholder: { type: 'TITLE', index: 0 },
+            objectId: titleId,
+          },
+          {
+            layoutPlaceholder: { type: 'BODY', index: 0 },
+            objectId: bodyId,
+          },
+        ],
+      },
+    },
+    {
+      insertText: {
+        objectId: titleId,
+        insertionIndex: 0,
+        text: slideTitle.trim(),
+      },
+    },
+  ];
+
+  if (bodyText.trim()) {
+    requests.push({
+      insertText: {
+        objectId: bodyId,
+        insertionIndex: 0,
+        text: bodyText.trim(),
+      },
+    });
+  }
+
+  await workspaceFetch(
+    `https://slides.googleapis.com/v1/presentations/${encodeURIComponent(presentationId)}:batchUpdate`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests }),
     }
   );
 }
